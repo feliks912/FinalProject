@@ -2,6 +2,10 @@
   "expo": {
     "name": "FinalProject",
     "slug": "FinalProject",
+    "plugins": [
+      "@react-native-google-signin/google-signin",
+      "@react-native-firebase/app"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,16 +22,24 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.feliks912.FinalProject"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.feliks912.FinalProject"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7c99d6d9-b34f-4889-8979-d96614c84eaa"
+      }
     }
   }
 }
