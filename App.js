@@ -1,13 +1,25 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Image, Button, ImageBackground, Vibration, ToastAndroid,
-TextInput, FlatList, Pressable } from 'react-native';
-import React, {useState, useEffect} from 'react'
+import {
+  StyleSheet, Text, View, Image, Button, ImageBackground, Vibration, ToastAndroid,
+  TextInput, FlatList
+} from 'react-native';
+import React, { useState, useEffect } from 'react'
+import moment from 'moment';
+
 import 'expo-dev-client';
+
+import firestore, { firebase } from '@react-native-firebase/firestore';
+
+import image from './assets/Cute-cat.jpg'
+
+import FeedItem from './components/FeedItem.js'
 
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
+//import MainContainer from './navigation/MainContainer';
 
-import firestore from '@react-native-firebase/firestore'
+
+
+
 
 GoogleSignin.configure({
   webClientId: '783455449055-3aq47aap1qhf0q77pm8gf826svlsqad5.apps.googleusercontent.com'
@@ -25,68 +37,72 @@ async function onGoogleButtonPress() {
   user_sign_in.then((user) => {
     console.log(user);
   })
-  .catch((error) =>{
-    console.log(error);
-  })
+    .catch((error) => {
+      console.log(error);
+    })
 }
 
 async function googleSignOut() {
   ToastAndroid.show("Signing out...", ToastAndroid.SHORT);
-  try{
+  try {
     //revokeAccess removes automatic account selection on next login (any many more things)
     await GoogleSignin.revokeAccess();
     await auth().signOut();
-  } catch(error){
+  } catch (error) {
     console.error(error);
   }
 }
 
-async function firestoreData(action, collection_id, ...props){
+
+
+
+
+async function firestoreData(action, collection_id, ...props) {
   try {
-    if(action == 'r'){
-      if(props.length){
+    if (action == 'r') {
+      if (props.length) {
         const temporary_var = await firestore().collection(collection_id).doc(props[0]).get();
         return temporary_var;
-      }else{
+      } else {
         const temporary_var = await firestore().collection(collection_id).get();
         return temporary_var;
       }
     }
-    else if(action == 'w'){
-      if(props.length == 2){
+    else if (action == 'w') {
+      if (props.length == 2) {
         await firestore().collection(collection_id).doc(props[0]).set(props[1])
-      }else{
+      } else {
         await firestore().collection(collection_id).add(props[0])
       }
     }
-    else if(action == 'a'){
-      if(props.length != 2) throw new Error('insufficient arguments in append')
+    else if (action == 'a') {
+      if (props.length != 2) throw new Error('insufficient arguments in append')
       await firestore().collection(collection_id).doc(props[0]).update(props[1])
-    }else{
+    } else {
       throw new Error('inappropriate arguments led to default')
     }
   }
-  catch(error){
+  catch (error) {
     console.error('Error writing new message to Firebase Database', error);
   }
 }
 
-import image from './assets/Cute-cat.jpg'
-const vibrationPattern = [0,30,110,30];
+
+const vibrationPattern = [0, 30, 110, 30];
 
 export default function App() {
 
-  const [ initializing, setInitializing ] = useState(true);
-  const [ user, setUser ] = useState();
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState();
 
-  const [ enteredMessageText, setEnteredMessageText ] = useState('');
-  const [ timesPressed, setTimesPressed ] = useState(0);
+  const [enteredMessageText, setEnteredMessageText] = useState('');
+  const [timesPressed, setTimesPressed] = useState(0);
 
-  const [ newFeedEvent, setNewFeedEvent ] = useState('');
-  const [ feedList, setFeedList ] = useState([]);
-  
+  const [newFeedEvent, setNewFeedEvent] = useState('');
+  const [feedList, setFeedList] = useState([]);
+
   //Delete feed item with parsed ID from the list
-  function deleteFeedEvent(id){
+  function deleteFeedEvent(id) {
     setFeedList((currentFeedList) => {
       return currentFeedList.filter((feed) => feed.id !== id);
     });
@@ -94,15 +110,15 @@ export default function App() {
 
   //Add a feed item to the list. TODO is update Firebase list, get the list back, filter the list,
   //and assign the ID of the list to the ID of local list
-  function addToFeedList(){
+  function addToFeedList() {
     setFeedList((currentFeedList) => [
       ...currentFeedList,
-      {text: newFeedEvent, id: Math.random().toString()}
+      { text: newFeedEvent, id: Math.random().toString() }
     ]);
   }
 
 
-  function messageInputHandler(enteredText){
+  function messageInputHandler(enteredText) {
     setEnteredMessageText(enteredText)
   }
 
@@ -127,24 +143,24 @@ export default function App() {
   //send a button count *update* to Firebase
   function increaseButtonCount() {
     // Create a reference to the post
-    const postReference = firestore().collection(user.uid).doc(`user_info`);
+    const postReference = firestore().collection(user.uid).doc(`user`);
 
     return firestore().runTransaction(async transaction => {
       // Get post data first
       const postSnapshot = await transaction.get(postReference);
-  
+
       if (!postSnapshot.exists) {
         throw 'Post does not exist!';
       }
-  
+
       transaction.update(postReference, {
         buttonPresses: postSnapshot.data().buttonPresses + 1,
       });
     });
   }
 
- async function sendTimesPressed(number){
-    await firestoreData('a', user.uid, 'user_info', {buttonPresses: number})
+  async function sendTimesPressed(number) {
+    await firestoreData('a', user.uid, 'user', { buttonPresses: number })
   }
 
   //Subscribe on user events
@@ -153,44 +169,62 @@ export default function App() {
     return subscriber; // unsubscribe on unmount
   }, []);
 
+
   //On User state change
   function onAuthStateChangedLocal(user) {
     setUser(user);
 
     Vibration.vibrate(vibrationPattern);
-    const currentTime = Math.floor(Date.now()/1000)
-    if(user){
+    const currentTime = moment().unix()
+    if (user) {
       //Initialize or update user data
       firestoreData('r', user.uid).then((data) => {
-        if(data.empty){
-          firestoreData('w', user.uid, 'user_info', {
+        if (data.empty) {
+          firestoreData('w', user.uid, 'user', {
             name: user.displayName,
             email: user.email,
             photoURL: user.photoURL,
             petCount: 0,
+            buttonPresses: 0
           })
-          firestoreData('a', user.uid, 'user_info', {
+          firestoreData('a', user.uid, 'user', {
             'activity.firstLogin': currentTime,
             'activity.lastLogin': currentTime
           })
-        } else if(data.empty == false) {
-          firestoreData('a', user.uid, 'user_info', {
+        } else if (data.empty == false) {
+          firestoreData('a', user.uid, 'user', {
             'activity.lastLogin': currentTime
           });
         } else { console.error('data is undefined.') }
       })
-      //Start listeners on login
+
+      //Start listeners on login (please convert this to hooks)
       //Button press counter
-      firestore().collection(user.uid).doc('user_info').onSnapshot(documentSnapshot => {
-        setTimesPressed(documentSnapshot.data().buttonPresses)
+      firestore().collection(user.uid).doc('user').onSnapshot(documentSnapshot => {
+        if (documentSnapshot.exists) {
+          setTimesPressed(documentSnapshot.data().buttonPresses)
+        }
+        else console.log("Snapshot doesn't exist?")
       });
+
       //feedList
-      //CODE
+      firestore().collection(user.uid).doc('pets').collection('Rex').where('time', '>=', 0).orderBy('time', 'asc').onSnapshot(querySnapshot => {
+        const tempFeeds = [];
+        querySnapshot.forEach(documentSnapshot => {
+          tempFeeds.push({
+            ...documentSnapshot.data(),
+            id: documentSnapshot.id,
+          });
+        });
+        setFeedList(tempFeeds);
+      });
+
       //PetList
       //CODE
+
       //Show message
       ToastAndroid.show("Successfuly signed in with Google.", ToastAndroid.SHORT);
-    }else{
+    } else {
       ToastAndroid.show("You've been signed out", ToastAndroid.SHORT);
     }
     if (initializing) setInitializing(false);
@@ -198,92 +232,124 @@ export default function App() {
 
   if (initializing) return null;
 
-  if(!user){
+  if (!user) {
     return (
       <View style={styles.container}>
-        <ImageBackground source={image} 
+        <ImageBackground source={image}
           resizeMode="stretch"
           style={styles.image}>
-            <GoogleSigninButton
-              style = {styles.googleButtonStyle}
-              onPress = {() => onGoogleButtonPress().then(() => {
-                console.log('Signed in with Google!');
-              })}
-            />
+          <GoogleSigninButton
+            style={styles.googleButtonStyle}
+            onPress={() => onGoogleButtonPress().then(() => {
+              console.log('Signed in with Google!');
+            })}
+          />
         </ImageBackground>
       </View>
     );
   }
-  return(
-      <View style={styles.postLoginView}>
-        <Image source={{uri:user.photoURL}}
-            style={{width:75, 
-                    height:75, 
-                    borderRadius:50,
-                    margin:10}}
-            />
-        <Text style={styles.elementMargin}>
-          <Text>Welcome, </Text>
-          <Text style={{fontWeight: 'bold'}}>{user.displayName}</Text>
-        </Text>
+  return (
+    //<MainContainer />
 
-        <TextInput style={styles.textInput} 
-          placeholder="Write Your message here." 
-          onChangeText={setNewFeedEvent} 
-          value={newFeedEvent}
+    <View style={styles.postLoginView}>
+      <Image source={{ uri: user.photoURL }}
+        style={{
+          width: 75,
+          height: 75,
+          borderRadius: 50,
+          margin: 10
+        }}
+      />
+      <Text style={styles.elementMargin}>
+        <Text>Welcome, </Text>
+        <Text style={{ fontWeight: 'bold' }}>{user.displayName}</Text>
+      </Text>
+
+      <TextInput style={styles.textInput}
+        placeholder="Feed Rex with this amount."
+        onChangeText={setNewFeedEvent}
+        value={newFeedEvent}
+      />
+
+      <Button title='Feed'
+        onPress={() => {
+          //get current feed number
+          //we're not testing how much food is left here
+          if(newFeedEvent){
+            firestore().collection(user.uid).doc('pets').collection('Rex').doc('settings').get().then((data) => {
+              const totalFeedNum = data.data().feedNum
+              console.log("currently fed Rex " + totalFeedNum + " times.")
+              const currentTime = moment().unix()
+              firestore().collection(user.uid).doc('pets').collection('Rex').doc('feed' + totalFeedNum).set({
+                amount: newFeedEvent,
+                device: 0,
+                time: currentTime
+              }).then(() => {
+                //Increase feed amount by one in pet settings
+                firestore().collection(user.uid).doc('pets').collection('Rex').doc('settings').update({feedNum: totalFeedNum + 1}).then(() => {
+                  console.log("feed added.")
+                })
+              })
+            })
+          }
+        }} />
+
+      <View style={styles.elementMargin}>
+        <Button title='Get user info'
+          onPress={() => console.log(user)}
         />
-
-        <Button title = 'Send'
-          onPress={addToFeedList}/>
-
-        <View style={styles.elementMargin}>
-          <Button title = 'Get user info'
-            onPress={() => console.log(user)}
-          />
-        </View>
-        
-        <View style={styles.elementMargin}>
-          <Button
-            title = {"you've pressed this button " + timesPressed.toString() + " times."}
-            onPress={increaseButtonCount}
-          />
-        </View>
-        
-        <View style={styles.elementMargin}>
-          <Button title = {"Reset number"}
-            onPress={() => sendTimesPressed(0)}
-          />
-        </View>
-        
-        <View style={styles.elementMargin}>
-          <Button title = "Sign out"
-            onPress={() => googleSignOut().then(() => console.log('Signed out!'))}
-          />
-        </View>
-
-        <View style={styles.feedListContainer}>
-          <FlatList data={feedList} renderItem={(feedData) => {
-            return(
-              <View style={styles.feedItem}>
-                <Pressable
-                  android_ripple={{color: '#210644', borderless: true}}
-                  onPress={deleteFeedEvent.bind(this, feedData.item.id)}
-                >
-                  <View>
-                    <Text style={styles.feedText}> 
-                      {feedData.item.text}
-                    </Text>
-                  </View>
-                </Pressable>
-              </View>
-            )
-          }}
-          keyExtractor={(item, index) => {
-            return item.id;
-          }}
-          />
-        </View>
       </View>
+
+      <View style={styles.elementMargin}>
+        <Button title='Log Rex feeds'
+          onPress={() => {
+            firestore().collection(user.uid).doc('pets').collection('Rex').where('device', '>=', 0).get().then((data) => {
+              console.log(data.docs.map(doc => doc.data()))
+            })
+          }}
+        />
+      </View>
+
+      <View style={styles.elementMargin}>
+        <Button
+          title={"you've pressed this button " + timesPressed.toString() + " times."}
+          onPress={increaseButtonCount}
+        />
+      </View>
+
+      <View style={styles.elementMargin}>
+        <Button title={"Reset number"}
+          onPress={() => sendTimesPressed(0)}
+        />
+      </View>
+
+      <View style={styles.elementMargin}>
+        <Button title="Sign out"
+          onPress={() => googleSignOut().then(() => console.log('Signed out!'))}
+        />
+      </View>
+
+
+      {/* Feed list */}
+      <View style={styles.feedListContainer}>
+        <FlatList data={feedList} renderItem={(feedData) => {
+          const formattedTime = moment.unix(feedData.item.time).format("DD.MM.YYYY HH:mm:ss")
+          return <FeedItem
+            text={
+              "Pet: Rex\nAmount: " 
+              + feedData.item.amount 
+              + "\nTime: "
+              + formattedTime
+            }
+            onDeleteItem={deleteFeedEvent}
+            id={feedData.item.id} />
+        }}
+        keyExtractor={(item, index) => {
+          return item.id;
+        }}
+        />
+      </View>
+    </View>
   )
 }
 
@@ -317,21 +383,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  googleButtonStyle:{
-    width: '65%', 
-    height: 65, 
+  googleButtonStyle: {
+    width: '65%',
+    height: 65,
     marginTop: 600,
   },
-  feedListContainer:{
+  feedListContainer: {
     flex: 5,
-  },
-  feedItem:{
-    margin: 8,
-    borderRadius: 6,
-    backgroundColor: '#5e08cc',
-  },
-  feedText:{
-    color: 'white',
-    padding: 8,
   }
 });
