@@ -20,11 +20,8 @@ import auth from '@react-native-firebase/auth';
 import MainContainer from './navigation/MainContainer';
 
 
-
-
-
 GoogleSignin.configure({
-  webClientId: '783455449055-3aq47aap1qhf0q77pm8gf826svlsqad5.apps.googleusercontent.com'
+  webClientId: 'web-client-id-here'
 });
 
 async function onGoogleButtonPress() {
