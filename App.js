@@ -15,7 +15,8 @@ import FeedItem from './components/FeedItem.js'
 
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
-//import MainContainer from './navigation/MainContainer';
+
+import MainContainer from './navigation/MainContainer';
 
 
 
@@ -100,6 +101,8 @@ export default function App() {
 
   const [newFeedEvent, setNewFeedEvent] = useState('');
   const [feedList, setFeedList] = useState([]);
+
+  const [petList, setPetList] = useState([]);
 
   //Delete feed item with parsed ID from the list
   function deleteFeedEvent(id) {
@@ -220,7 +223,16 @@ export default function App() {
       });
 
       //PetList
-      //CODE
+      firestore().collection(user.uid).doc('pets').collection('Rex').where('time', '>=', 0).orderBy('time', 'asc').onSnapshot(querySnapshot => {
+        const tempPets = [];
+        querySnapshot.forEach(documentSnapshot => {
+          tempPets.push({
+            ...documentSnapshot.data(),
+            id: documentSnapshot.id,
+          });
+        });
+        setFeedList(tempPets);
+      });
 
       //Show message
       ToastAndroid.show("Successfuly signed in with Google.", ToastAndroid.SHORT);
@@ -249,108 +261,108 @@ export default function App() {
     );
   }
   return (
-    //<MainContainer />
+    <MainContainer user={user}/>
 
-    <View style={styles.postLoginView}>
-      <Image source={{ uri: user.photoURL }}
-        style={{
-          width: 75,
-          height: 75,
-          borderRadius: 50,
-          margin: 10
-        }}
-      />
-      <Text style={styles.elementMargin}>
-        <Text>Welcome, </Text>
-        <Text style={{ fontWeight: 'bold' }}>{user.displayName}</Text>
-      </Text>
+  //   <View style={styles.postLoginView}>
+  //     <Image source={{ uri: user.photoURL }}
+  //       style={{
+  //         width: 75,
+  //         height: 75,
+  //         borderRadius: 50,
+  //         margin: 10
+  //       }}
+  //     />
+  //     <Text style={styles.elementMargin}>
+  //       <Text>Welcome, </Text>
+  //       <Text style={{ fontWeight: 'bold' }}>{user.displayName}</Text>
+  //     </Text>
 
-      <TextInput style={styles.textInput}
-        placeholder="Feed Rex with this amount."
-        onChangeText={setNewFeedEvent}
-        value={newFeedEvent}
-      />
+  //     <TextInput style={styles.textInput}
+  //       placeholder="Feed Rex with this amount."
+  //       onChangeText={setNewFeedEvent}
+  //       value={newFeedEvent}
+  //     />
 
-      <Button title='Feed'
-        onPress={() => {
-          //get current feed number
-          //we're not testing how much food is left here
-          if(newFeedEvent){
-            firestore().collection(user.uid).doc('pets').collection('Rex').doc('settings').get().then((data) => {
-              const totalFeedNum = data.data().feedNum
-              console.log("currently fed Rex " + totalFeedNum + " times.")
-              const currentTime = moment().unix()
-              firestore().collection(user.uid).doc('pets').collection('Rex').doc('feed' + totalFeedNum).set({
-                amount: newFeedEvent,
-                device: 0,
-                time: currentTime
-              }).then(() => {
-                //Increase feed amount by one in pet settings
-                firestore().collection(user.uid).doc('pets').collection('Rex').doc('settings').update({feedNum: totalFeedNum + 1}).then(() => {
-                  console.log("feed added.")
-                })
-              })
-            })
-          }
-        }} />
+  //     <Button title='Feed'
+  //       onPress={() => {
+  //         //get current feed number
+  //         //we're not testing how much food is left here
+  //         if(newFeedEvent){
+  //           firestore().collection(user.uid).doc('pets').collection('Rex').doc('settings').get().then((data) => {
+  //             const totalFeedNum = data.data().feedNum
+  //             console.log("currently fed Rex " + totalFeedNum + " times.")
+  //             const currentTime = moment().unix()
+  //             firestore().collection(user.uid).doc('pets').collection('Rex').doc('feed' + totalFeedNum).set({
+  //               amount: newFeedEvent,
+  //               device: 0,
+  //               time: currentTime
+  //             }).then(() => {
+  //               //Increase feed amount by one in pet settings
+  //               firestore().collection(user.uid).doc('pets').collection('Rex').doc('settings').update({feedNum: totalFeedNum + 1}).then(() => {
+  //                 console.log("feed added.")
+  //               })
+  //             })
+  //           })
+  //         }
+  //       }} />
 
-      <View style={styles.elementMargin}>
-        <Button title='Get user info'
-          onPress={() => console.log(user)}
-        />
-      </View>
+  //     <View style={styles.elementMargin}>
+  //       <Button title='Get user info'
+  //         onPress={() => console.log(user)}
+  //       />
+  //     </View>
 
-      <View style={styles.elementMargin}>
-        <Button title='Log Rex feeds'
-          onPress={() => {
-            firestore().collection(user.uid).doc('pets').collection('Rex').where('device', '>=', 0).get().then((data) => {
-              console.log(data.docs.map(doc => doc.data()))
-            })
-          }}
-        />
-      </View>
+  //     <View style={styles.elementMargin}>
+  //       <Button title='Log Rex feeds'
+  //         onPress={() => {
+  //           firestore().collection(user.uid).doc('pets').collection('Rex').where('device', '>=', 0).get().then((data) => {
+  //             console.log(data.docs.map(doc => doc.data()))
+  //           })
+  //         }}
+  //       />
+  //     </View>
 
-      <View style={styles.elementMargin}>
-        <Button
-          title={"you've pressed this button " + timesPressed.toString() + " times."}
-          onPress={increaseButtonCount}
-        />
-      </View>
+  //     <View style={styles.elementMargin}>
+  //       <Button
+  //         title={"you've pressed this button " + timesPressed.toString() + " times."}
+  //         onPress={increaseButtonCount}
+  //       />
+  //     </View>
 
-      <View style={styles.elementMargin}>
-        <Button title={"Reset number"}
-          onPress={() => sendTimesPressed(0)}
-        />
-      </View>
+  //     <View style={styles.elementMargin}>
+  //       <Button title={"Reset number"}
+  //         onPress={() => sendTimesPressed(0)}
+  //       />
+  //     </View>
 
-      <View style={styles.elementMargin}>
-        <Button title="Sign out"
-          onPress={() => googleSignOut().then(() => console.log('Signed out!'))}
-        />
-      </View>
+  //     <View style={styles.elementMargin}>
+  //       <Button title="Sign out"
+  //         onPress={() => googleSignOut().then(() => console.log('Signed out!'))}
+  //       />
+  //     </View>
 
 
-      {/* Feed list */}
-      <View style={styles.feedListContainer}>
-        <FlatList data={feedList} renderItem={(feedData) => {
-          const formattedTime = moment.unix(feedData.item.time).format("DD.MM.YYYY HH:mm:ss")
-          return <FeedItem
-            text={
-              "Pet: Rex\nAmount: " 
-              + feedData.item.amount 
-              + "\nTime: "
-              + formattedTime
-            }
-            onDeleteItem={deleteFeedEvent}
-            id={feedData.item.id} />
-        }}
-        keyExtractor={(item, index) => {
-          return item.id;
-        }}
-        />
-      </View>
-    </View>
-  )
+  //     {/* Feed list */}
+  //     <View style={styles.feedListContainer}>
+  //       <FlatList data={feedList} renderItem={(feedData) => {
+  //         const formattedTime = moment.unix(feedData.item.time).format("DD.MM.YYYY HH:mm:ss")
+  //         return <FeedItem
+  //           text={
+  //             "Pet: Rex\nAmount: " 
+  //             + feedData.item.amount 
+  //             + "\nTime: "
+  //             + formattedTime
+  //           }
+  //           onDeleteItem={deleteFeedEvent}
+  //           id={feedData.item.id} />
+  //       }}
+  //       keyExtractor={(item, index) => {
+  //         return item.id;
+  //       }}
+  //       />
+  //     </View>
+  //   </View>
+    )
 }
 
 const styles = StyleSheet.create({
