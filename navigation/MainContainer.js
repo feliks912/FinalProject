@@ -8,6 +8,7 @@ import IonIcons from 'react-native-vector-icons/Ionicons'
 import FeedScreen from './screens/FeedScreen.js'
 import PetScreen from './screens/PetScreen.js'
 import SettingsScreen from './screens/SettingsScreen.js'
+import { useReducer } from 'react'
 
 // Screen names
 const feedScreenName = 'Feed'
@@ -16,7 +17,7 @@ const petScreenName = 'Pets'
 
 const Tab = createBottomTabNavigator();
 
-export default function MainContainer() {
+export default function MainContainer(props) {
     return (
         <NavigationContainer>
             <Tab.Navigator
@@ -44,7 +45,7 @@ export default function MainContainer() {
             >
 
                 <Tab.Screen name={petScreenName} component={PetScreen} />
-                <Tab.Screen name={feedScreenName} component={FeedScreen} />
+                <Tab.Screen name={feedScreenName} component={FeedScreen} initialParams={props}/>
                 <Tab.Screen name={settingsScreenName} component={SettingsScreen} />
 
             </Tab.Navigator>

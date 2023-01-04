@@ -1,7 +1,9 @@
-import { View, Text, Image, StyleSheet } from 'react-native'
+import { View, Text, Image, StyleSheet, FlatList } from 'react-native'
 import FeedItem from '../../components/FeedItem';
+import moment from 'moment';
 
-export default function FeedScreen(navigation) {
+export default function FeedScreen({route, navigation}) {
+    console.log(JSON.stringify(route.params))
     return (
         <View style={{
             flex: 1,
@@ -9,26 +11,21 @@ export default function FeedScreen(navigation) {
             alignItems: 'center',
             justifyContent: 'center',
         }}>
-            <Image source={{ uri: navigation.user.photoURL }}
-                style={{
-                width: 75,
-                height: 75,
-                borderRadius: 50,
-                margin: 10
-                }}
+            
+            <Image source={{ uri: route.params.photoURL }}
+                style={styles.profilePhoto}
             />
-            {/* <Text style={styles.elementMargin}>
+            <Text style={styles.elementMargin}>
                 <Text>Welcome, </Text>
-                <Text style={{ fontWeight: 'bold' }}>{user.displayName}</Text>
+                <Text style={{ fontWeight: 'bold' }}>{route.params.displayName}</Text>
             </Text>
 
-            <TextInput style={styles.textInput}
+            {/* <TextInput style={styles.textInput}
                 placeholder="Feed Rex with this amount."
                 onChangeText={setNewFeedEvent}
                 value={newFeedEvent}
-            />
-
-            <Button title='Feed'
+            /> 
+             <Button title='Feed'
                 onPress={() => {
                 //get current feed number
                 //we're not testing how much food is left here
@@ -84,10 +81,10 @@ export default function FeedScreen(navigation) {
                 <Button title="Sign out"
                 onPress={() => googleSignOut().then(() => console.log('Signed out!'))}
                 />
-            </View>
+            </View> */}
 
             <View style={styles.feedListContainer}>
-                <FlatList data={feedList} renderItem={(feedData) => {
+                <FlatList data={route.params.feedList} renderItem={(feedData) => {
                 const formattedTime = moment.unix(feedData.item.time).format("DD.MM.YYYY HH:mm:ss")
                 return <FeedItem
                     text={
@@ -103,28 +100,34 @@ export default function FeedScreen(navigation) {
                 return item.id;
                 }}
                 />
-            </View> */}
+            </View>
         </View>
     )
 }
 
 const styles = StyleSheet.create({
-    // elementMargin: {
-    //   margin: 10,
-    // },
-    // container: {
-    //   flex: 1,
-    //   backgroundColor: '#fff',
-    //   alignItems: 'center',
-    //   justifyContent: 'center',
-    // },
-    // textInput: {
-    //   borderWidth: 1,
-    //   borderColor: '#cccccc',
-    //   width: '100%',
-    //   margin: 10,
-    //   padding: 8,
-    // },
+    profilePhoto: {
+        width: 75,
+        height: 75,
+        borderRadius: 50,
+        margin: 10
+    },
+    elementMargin: {
+      margin: 10,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: '#fff',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    textInput: {
+      borderWidth: 1,
+      borderColor: '#cccccc',
+      width: '100%',
+      margin: 10,
+      padding: 8,
+    },
     postLoginView: {
       flex: 1,
       backgroundColor: '#fff',
@@ -138,12 +141,12 @@ const styles = StyleSheet.create({
       justifyContent: 'center',
       alignItems: 'center',
     },
-    // googleButtonStyle: {
-    //   width: '65%',
-    //   height: 65,
-    //   marginTop: 600,
-    // },
-    // feedListContainer: {
-    //   flex: 5,
-    // }
+    googleButtonStyle: {
+      width: '65%',
+      height: 65,
+      marginTop: 600,
+    },
+    feedListContainer: {
+      flex: 5,
+    }
   });

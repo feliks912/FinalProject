@@ -9,9 +9,10 @@ import 'expo-dev-client';
 
 import firestore, { firebase } from '@react-native-firebase/firestore';
 
-import image from './assets/Cute-cat.jpg'
+import image from './assets/Cute-cat.jpg';
 
-import FeedItem from './components/FeedItem.js'
+//import FeedItem from './components/FeedItem';
+import FeedItem from './components/FeedItem';
 
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
@@ -258,10 +259,11 @@ export default function App() {
           />
         </ImageBackground>
       </View>
-    );
-  }
+    )}
   return (
-    <MainContainer user={user}/>
+    <MainContainer photoURL={user.photoURL} 
+                  displayName = {user.displayName}
+                  feedList = {feedList}/>
 
   //   <View style={styles.postLoginView}>
   //     <Image source={{ uri: user.photoURL }}
