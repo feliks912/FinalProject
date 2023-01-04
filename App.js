@@ -261,21 +261,7 @@ export default function App() {
     );
   }
   return (
-    <MainContainer user={user}/>
-
-  //   <View style={styles.postLoginView}>
-  //     <Image source={{ uri: user.photoURL }}
-  //       style={{
-  //         width: 75,
-  //         height: 75,
-  //         borderRadius: 50,
-  //         margin: 10
-  //       }}
-  //     />
-  //     <Text style={styles.elementMargin}>
-  //       <Text>Welcome, </Text>
-  //       <Text style={{ fontWeight: 'bold' }}>{user.displayName}</Text>
-  //     </Text>
+    <MainContainer UserPhotoURL={user.photoURL} UserDisplayName={user.displayName} feedList={feedList} deleteFunction={deleteFeedEvent}/>
 
   //     <TextInput style={styles.textInput}
   //       placeholder="Feed Rex with this amount."
@@ -338,27 +324,6 @@ export default function App() {
   //     <View style={styles.elementMargin}>
   //       <Button title="Sign out"
   //         onPress={() => googleSignOut().then(() => console.log('Signed out!'))}
-  //       />
-  //     </View>
-
-
-  //     {/* Feed list */}
-  //     <View style={styles.feedListContainer}>
-  //       <FlatList data={feedList} renderItem={(feedData) => {
-  //         const formattedTime = moment.unix(feedData.item.time).format("DD.MM.YYYY HH:mm:ss")
-  //         return <FeedItem
-  //           text={
-  //             "Pet: Rex\nAmount: " 
-  //             + feedData.item.amount 
-  //             + "\nTime: "
-  //             + formattedTime
-  //           }
-  //           onDeleteItem={deleteFeedEvent}
-  //           id={feedData.item.id} />
-  //       }}
-  //       keyExtractor={(item, index) => {
-  //         return item.id;
-  //       }}
   //       />
   //     </View>
   //   </View>

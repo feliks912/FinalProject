@@ -16,7 +16,7 @@ const petScreenName = 'Pets'
 
 const Tab = createBottomTabNavigator();
 
-export default function MainContainer() {
+export default function MainContainer(params) {
     return (
         <NavigationContainer>
             <Tab.Navigator
@@ -44,7 +44,7 @@ export default function MainContainer() {
             >
 
                 <Tab.Screen name={petScreenName} component={PetScreen} />
-                <Tab.Screen name={feedScreenName} component={FeedScreen} />
+                <Tab.Screen name={feedScreenName} component={FeedScreen} initialParams={params}/>
                 <Tab.Screen name={settingsScreenName} component={SettingsScreen} />
 
             </Tab.Navigator>
