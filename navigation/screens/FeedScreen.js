@@ -1,21 +1,26 @@
-import { View, Text, Image, StyleSheet, FlatList } from 'react-native'
+import { View, Text, Image, StyleSheet, FlatList, Button, DeviceEventEmitter } from 'react-native'
 import FeedItem from '../../components/FeedItem';
 
 export default function FeedScreen({route, navigation}) {
     return (
         <View style={Styles.container}>
 
-            <Image source={{ uri: route.params.UserPhotoURL }}
+            <Image source={{ uri: route.params.userPhotoURL }}
                 style={Styles.image}
             />
 
             <Text style={Styles.elementMargin}>
                 <Text>Welcome, </Text>
-                <Text style={{ fontWeight: 'bold' }}>{route.params.UserDisplayName}</Text>
+                <Text style={{ fontWeight: 'bold' }}>{route.params.userDisplayName}</Text>
                 <Text>.</Text>
             </Text>
 
-            <View style={Styles.feedListContainer}>
+            <View>
+              <Button title="button"
+                      onPress={DeviceEventEmitter.emit("event.testEvent", "Message event: button has been pressed.")}/>
+            </View>
+
+            {/* <View style={Styles.feedListContainer}>
                 <FlatList data={route.params.feedList} renderItem={(feedData) => {
                 const formattedTime = moment.unix(feedData.item.time).format("DD.MM.YYYY HH:mm:ss")
                 return <FeedItem
@@ -32,7 +37,7 @@ export default function FeedScreen({route, navigation}) {
                 return item.id;
                 }}
                 />
-            </View>
+            </View> */}
 
         </View>
     )

@@ -1,6 +1,6 @@
 import {
   StyleSheet, Text, View, Image, Button, ImageBackground, Vibration, ToastAndroid,
-  TextInput, FlatList
+  TextInput, FlatList, DeviceEventEmitter
 } from 'react-native';
 import React, { useState, useEffect } from 'react'
 import moment from 'moment';
@@ -244,6 +244,12 @@ export default function App() {
 
   if (initializing) return null;
 
+  DeviceEventEmitter.addListener("event.testEvent", (message) => printConsoleOnPress(message));
+
+  function printConsoleOnPress(message){
+    console.log(message)
+  }
+
   if (!user) {
     return (
       <View style={styles.container}>
@@ -261,7 +267,8 @@ export default function App() {
     );
   }
   return (
-    <MainContainer UserPhotoURL={user.photoURL} UserDisplayName={user.displayName} feedList={feedList} deleteFunction={deleteFeedEvent}/>
+    <MainContainer userPhotoURL={user.photoURL} 
+                   userDisplayName={user.displayName}/>
 
   //     <TextInput style={styles.textInput}
   //       placeholder="Feed Rex with this amount."
