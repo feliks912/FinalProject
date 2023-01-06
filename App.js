@@ -18,6 +18,7 @@ import auth from '@react-native-firebase/auth';
 
 import MainContainer from './navigation/MainContainer';
 
+import { NameContext } from './components/Context'
 
 
 
@@ -267,8 +268,10 @@ export default function App() {
     );
   }
   return (
-    <MainContainer userPhotoURL={user.photoURL} 
-                   userDisplayName={user.displayName}/>
+    <NameContext.Provider value={feedList}>
+      <MainContainer userPhotoUrl={user.photoURL}
+                     userDisplayName={user.displayName}/>
+    </NameContext.Provider>
 
   //     <TextInput style={styles.textInput}
   //       placeholder="Feed Rex with this amount."

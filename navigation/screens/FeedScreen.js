@@ -1,7 +1,12 @@
-import { View, Text, Image, StyleSheet, FlatList, Button, DeviceEventEmitter } from 'react-native'
+import { View, Text, Image, StyleSheet, FlatList, Button, DeviceEventEmitter, co } from 'react-native'
 import FeedItem from '../../components/FeedItem';
+import { NameContext } from '../../components/Context'
+import { useContext, componentDidMount } from 'react'
+import moment from 'moment'
 
 export default function FeedScreen({route, navigation}) {
+    const feedList = useContext(NameContext);
+    
     return (
         <View style={Styles.container}>
 
@@ -15,29 +20,29 @@ export default function FeedScreen({route, navigation}) {
                 <Text>.</Text>
             </Text>
 
-            <View>
+            {/* <View>
               <Button title="button"
                       onPress={DeviceEventEmitter.emit("event.testEvent", "Message event: button has been pressed.")}/>
-            </View>
-
-            {/* <View style={Styles.feedListContainer}>
-                <FlatList data={route.params.feedList} renderItem={(feedData) => {
-                const formattedTime = moment.unix(feedData.item.time).format("DD.MM.YYYY HH:mm:ss")
-                return <FeedItem
-                    text={
-                    "Pet: Rex\nAmount: " 
-                    + feedData.item.amount 
-                    + "\nTime: "
-                    + formattedTime
-                    }
-                    onDeleteItem={deleteFunction}
-                    id={feedData.item.id} />
-                }}
-                keyExtractor={(item, index) => {
-                return item.id;
-                }}
-                />
             </View> */}
+
+            <View style={Styles.feedListContainer}>
+              <FlatList data={feedList} renderItem={(feedData) => {
+              const formattedTime = moment.unix(feedData.item.time).format("DD.MM.YYYY HH:mm:ss")
+              return <FeedItem
+                  text={
+                  "Pet: Rex\nAmount: " 
+                  + feedData.item.amount 
+                  + "\nTime: "
+                  + formattedTime
+                  }
+                  //onDeleteItem={deleteFunction}
+                  id={feedData.item.id} />
+              }}
+              keyExtractor={(item, index) => {
+              return item.id;
+              }}
+              />
+            </View>
 
         </View>
     )
