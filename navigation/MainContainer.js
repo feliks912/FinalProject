@@ -6,6 +6,7 @@ import { IonIcon } from "react-native-vector-icons/Ionicons";
 import FeedScreen from './screens/FeedScreen.js'
 import PetScreen from './screens/PetScreen.js'
 import SettingsScreen from './screens/SettingsScreen.js'
+import { useReducer } from 'react'
 
 // Screen names
 const feedScreenName = 'Feed'

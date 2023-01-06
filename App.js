@@ -9,22 +9,22 @@ import 'expo-dev-client';
 
 import firestore, { firebase } from '@react-native-firebase/firestore';
 
-import image from './assets/Cute-cat.jpg'
+import image from './assets/Cute-cat.jpg';
 
-import FeedItem from './components/FeedItem.js'
+//import FeedItem from './components/FeedItem';
+import FeedItem from './components/FeedItem';
 
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
 
 import MainContainer from './navigation/MainContainer';
 
-import { NameContext } from './components/Context'
 
 
 
 
 GoogleSignin.configure({
-  webClientId: '783455449055-3aq47aap1qhf0q77pm8gf826svlsqad5.apps.googleusercontent.com'
+  webClientId: 'web-client-id-here'
 });
 
 async function onGoogleButtonPress() {
@@ -265,8 +265,7 @@ export default function App() {
           />
         </ImageBackground>
       </View>
-    );
-  }
+    )}
   return (
     <NameContext.Provider value={feedList}>
       <MainContainer userPhotoUrl={user.photoURL}
