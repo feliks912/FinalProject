@@ -11,12 +11,12 @@ import firestore, { firebase } from '@react-native-firebase/firestore';
 
 import image from './assets/Cute-cat.jpg'
 
-import FeedItem from './components/FeedItem.js'
-
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
 
 import MainContainer from './navigation/MainContainer';
+
+import ListContext from './components/Context'
 
 
 
@@ -244,12 +244,6 @@ export default function App() {
 
   if (initializing) return null;
 
-  DeviceEventEmitter.addListener("event.testEvent", (message) => printConsoleOnPress(message));
-
-  function printConsoleOnPress(message){
-    console.log(message)
-  }
-
   if (!user) {
     return (
       <View style={styles.container}>
@@ -267,8 +261,11 @@ export default function App() {
     );
   }
   return (
-    <MainContainer userPhotoURL={user.photoURL} 
-                   userDisplayName={user.displayName}/>
+    <ListContext.Provider value={feedList}>
+      <MainContainer userPhotoURL={user.photoURL} 
+                     userDisplayName={user.displayName}/>
+    </ListContext.Provider>
+    
 
   //     <TextInput style={styles.textInput}
   //       placeholder="Feed Rex with this amount."

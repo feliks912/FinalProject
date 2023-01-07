@@ -1,7 +1,16 @@
-import { View, Text, Image, StyleSheet, FlatList, Button, DeviceEventEmitter } from 'react-native'
+import { View, Text, Image, StyleSheet, FlatList } from 'react-native'
+import { useContext } from 'react'
 import FeedItem from '../../components/FeedItem';
+import ListContext from '../../components/Context'
+import moment from 'moment'
 
 export default function FeedScreen({route, navigation}) {
+    const feedList = useContext(ListContext)
+
+    function deleteFunction(props){
+        console.log(props)
+    }
+
     return (
         <View style={Styles.container}>
 
@@ -15,13 +24,8 @@ export default function FeedScreen({route, navigation}) {
                 <Text>.</Text>
             </Text>
 
-            <View>
-              <Button title="button"
-                      onPress={DeviceEventEmitter.emit("event.testEvent", "Message event: button has been pressed.")}/>
-            </View>
-
-            {/* <View style={Styles.feedListContainer}>
-                <FlatList data={route.params.feedList} renderItem={(feedData) => {
+            <View style={Styles.feedListContainer}>
+                <FlatList data={feedList} renderItem={(feedData) => {
                 const formattedTime = moment.unix(feedData.item.time).format("DD.MM.YYYY HH:mm:ss")
                 return <FeedItem
                     text={
@@ -37,8 +41,7 @@ export default function FeedScreen({route, navigation}) {
                 return item.id;
                 }}
                 />
-            </View> */}
-
+            </View>
         </View>
     )
 }
