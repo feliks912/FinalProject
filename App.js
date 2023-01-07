@@ -267,10 +267,8 @@ export default function App() {
       </View>
     )}
   return (
-    <NameContext.Provider value={feedList}>
-      <MainContainer userPhotoUrl={user.photoURL}
-                     userDisplayName={user.displayName}/>
-    </NameContext.Provider>
+    <MainContainer userPhotoURL={user.photoURL} 
+                   userDisplayName={user.displayName}/>
 
   //     <TextInput style={styles.textInput}
   //       placeholder="Feed Rex with this amount."

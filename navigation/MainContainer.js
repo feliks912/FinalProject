@@ -1,6 +1,8 @@
+import { View, Text } from 'react-native'
+
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { IonIcon } from "react-native-vector-icons/Ionicons";
+import IonIcons from 'react-native-vector-icons/Ionicons'
 
 // Screens
 import FeedScreen from './screens/FeedScreen.js'
@@ -23,47 +25,28 @@ export default function MainContainer(params) {
                 screenOptions={(route) => ({
                     tabBarIcon: ({ focused, color, size }) => {
                         let iconName;
+                        let rn = route.name;
 
-                        //  It ought to be route.name not route.route.name but I think defining params in the MainContainer declaration
-                        //  opened it up to navigation and route prop, from which I must read one level further.
-                        let rn = route.route.name;
-
-                        if (rn === feedScreenName) {
-                            iconName = focused ? 'fast-food' : 'fast-food-outline'
-                        } else if (rn === petScreenName) {
+                        if (rn == feedScreenName) {
+                            iconName = focused ? 'fish' : 'fish-outline'
+                        } else if (rn == petScreenName) {
                             iconName = focused ? 'paw' : 'paw-outline'
-                        } else if (rn === settingsScreenName) {
+                        } else if (rn == settingsScreenName) {
                             iconName = focused ? 'settings' : 'settings-outline'
                         }
 
-                        return <IonIcon name={iconName} size={size} color={color} />
+                        return <IonIcons name={iconName} size={size} color={color} />
                     },
                     tabBarActiveTintColor: 'tomato',
                     tabBarInactiveTintColor: 'grey',
                     tabBarLabelStyle: { paddingBottom: 10, fontSize: 10 },
                     tabBarstyle: { padding: 10, height: 70 }
-                }
-            )}>
+                })}
+            >
 
-                <Tab.Screen name={petScreenName} 
-                            component={PetScreen} 
-                            options={{
-                                title: 'Edit pets'
-                            }}
-                            />
-                <Tab.Screen name={feedScreenName} 
-                            component={FeedScreen}
-                            options={{
-                                title: 'Past feeds'
-                            }}
-                            initialParams={params}
-                            />
-                <Tab.Screen name={settingsScreenName} 
-                            component={SettingsScreen} 
-                            options={{
-                                title: 'Global settings'
-                            }}
-                            />
+                <Tab.Screen name={petScreenName} component={PetScreen} />
+                <Tab.Screen name={feedScreenName} component={FeedScreen} initialParams={params}/>
+                <Tab.Screen name={settingsScreenName} component={SettingsScreen} />
 
             </Tab.Navigator>
 
