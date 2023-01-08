@@ -23,7 +23,7 @@ export default function FeedScreen() {
 
       <View style={Styles.feedListContainer}>
         <FlatList
-          data={context.feedList}
+          data={context.feedList[Object.keys(context.feedList)]}
           renderItem={(feedData) => {
             const formattedTime = moment
               .unix(feedData.item.time)
