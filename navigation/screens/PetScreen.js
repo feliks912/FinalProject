@@ -1,13 +1,22 @@
 import { View, Text } from 'react-native'
+import DropDownPicker from 'react-native-dropdown-picker';
 
 export default function PetScreen(navigation) {
+    const [open, setOpen] = useState(false);
+    const [value, setValue] = useState(null);
+    const [items, setItems] = useState([
+      {label: 'Apple', value: 'apple'},
+      {label: 'Banana', value: 'banana'}
+    ]);
+  
     return (
-        <View style={{ flex: 1, alightItems: 'center', justifyContent: 'center' }}>
-            <Text
-                onPress={() => alert('this is the Pet screen.')}
-                style={{ fontSize: 26, fontWeight: 'bold' }}>
-                Pet Screen
-            </Text>
-        </View>
-    )
+      <DropDownPicker
+        open={open}
+        value={value}
+        items={items}
+        setOpen={setOpen}
+        setValue={setValue}
+        setItems={setItems}
+      />
+    );
 }

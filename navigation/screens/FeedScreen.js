@@ -11,6 +11,8 @@ export default function FeedScreen() {
     console.log(props);
   }
 
+  const petNumber = 0
+
   return (
     <View style={Styles.container}>
       <Image source={{ uri: context.userPhotoURL }} style={Styles.image} />
@@ -23,7 +25,7 @@ export default function FeedScreen() {
 
       <View style={Styles.feedListContainer}>
         <FlatList
-          data={context.feedList[Object.keys(context.feedList)]}
+          data={context.feedList[Object.keys(context.feedList)[petNumber]]}
           renderItem={(feedData) => {
             const formattedTime = moment
               .unix(feedData.item.time)
@@ -31,12 +33,15 @@ export default function FeedScreen() {
             return (
               <FeedItem
                 text={
-                  "Pet: Rex\nAmount: " +
+                  "Pet: " +
+                  Object.keys(context.feedList)[petNumber].toString() +
+                  "\n" +
+                  "Amount: " +
                   feedData.item.amount +
                   "\nTime: " +
                   formattedTime
                 }
-                onDeleteItem={deleteFunction}
+                onDeleteItem={context.onFlatListPressable}
                 id={feedData.item.id}
               />
             );

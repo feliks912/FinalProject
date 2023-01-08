@@ -118,10 +118,13 @@ export default function App() {
   }, []);
 
   //Delete feed item with parsed ID from the list
-  function deleteFeedEvent(id) {
-    setFeedList((currentFeedList) => {
-      return currentFeedList.filter((feed) => feed.id !== id);
-    });
+  async function deleteFeedEvent(id) {
+    firestore()
+    .collection(user.uid)
+    .doc(id)
+    .delete().then(() => {
+      console.log("Feed Deleted")
+    })
   }
 
   // Handle setting a state
@@ -151,7 +154,7 @@ export default function App() {
   //send a button count *update* to Firebase
   function increaseButtonCount() {
     // Create a reference to the post
-    const postReference = firestore().collection(user.uid).doc(`user`);
+    const postReference = firestore().collection(user.uid).doc("user");
 
     return firestore().runTransaction(async (transaction) => {
       // Get post data first
@@ -167,6 +170,24 @@ export default function App() {
     });
   }
 
+  function updatePetFeedList(petName, petList){
+    const postReference = firestore()
+                            .collection(user.uid)
+                            .doc("feedInfo")
+                            .collection(petName)
+    return firestore().runTransaction(async (transaction) => {
+      const postSnapshot = await transaction.get(postReference)
+
+      if (!postSnapshot.exists) {
+        throw "Post does not exist!";
+      }
+
+      transaction.update(postReference, {
+        buttonPresses: postSnapshot.data().buttonPresses + 1,
+      });
+    })
+  }
+
   // Update the number of button presses in firestore
   async function sendTimesPressed(number) {
     await firestoreData("a", user.uid, "user", { buttonPresses: number });
@@ -178,11 +199,8 @@ export default function App() {
 
     if (user && petList) {
       newPetListener = petList.map((pet) => {
-        return firestore()
-          .collection(user.uid)
-          .doc("pets")
+        return firestore().collection(user.uid).doc("feedInfo")
           .collection(pet)
-          .where("time", ">=", 0)
           .orderBy("time", "asc")
           .onSnapshot((querySnapshot) => {
             let petFeedList = [];
@@ -196,21 +214,18 @@ export default function App() {
             });
 
             // Remove existing pet feed list instance in feedList
-            delete tempFeedList[pet]
+            delete tempFeedList[pet];
 
             // Add obtaned pet feed list to feedList
-            tempFeedList[pet] = petFeedList
+            tempFeedList[pet] = petFeedList;
 
             // Set feedList
             setFeedList(tempFeedList);
 
-            // Update feed count
-            firestore()
-              .collection(user.uid)
-              .doc("pets")
-              .collection(pet)
-              .doc("settings")
-              .update({ feedNum: petFeedList.length });
+            //Update feed count
+            firestore().collection(user.uid).doc("petInfo").update({ 
+              [pet + ".feedNum"]: petFeedList.length 
+            });
           });
       });
     }
@@ -253,35 +268,27 @@ export default function App() {
       // Start listeners on user login (please convert this to hooks)
 
       // Button press counter
-      firestore()
-        .collection(user.uid)
-        .doc("user")
-        .onSnapshot((documentSnapshot) => {
-          if (documentSnapshot.exists) {
-            setTimesPressed(documentSnapshot.data().buttonPresses);
-          } else console.log("Snapshot doesn't exist?");
-        });
+      firestore().collection(user.uid).doc("user").onSnapshot((documentSnapshot) => {
+        if (documentSnapshot.exists) {
+          setTimesPressed(documentSnapshot.data().buttonPresses);
+        } else console.log("Snapshot doesn't exist?");
+      });
 
       // Get device list
-      firestore()
-        .collection(user.uid)
-        .doc("devices")
-        .onSnapshot((documentSnapshot) => {
-          if (documentSnapshot.exists) {
-            setDeviceList(documentSnapshot.data());
-          } else console.log("No devices appended to user");
-        });
+      firestore().collection(user.uid).doc("devices").onSnapshot((documentSnapshot) => {
+        if (documentSnapshot.exists) {
+          setDeviceList(documentSnapshot.data());
+        } else console.log("No devices appended to user");
+      });
 
       // Get pet list
-      firestore()
-        .collection(user.uid)
-        .doc("pets")
+      firestore().collection(user.uid).doc("petInfo")
         .get()
         .then((data) => {
-          setPetList(data.data().petList);
+          setPetList(Object.keys(data.data()));
 
           firestoreData("a", user.uid, "user", {
-            petCount: data.data().petList.length,
+            petCount: Object.keys(data.data()).length,
           });
         });
 
@@ -297,23 +304,16 @@ export default function App() {
   }
 
   async function addToFeedList(feedInfo, petName) {
-    if (feedInfo) {
+    if (feedInfo && petName) {
       const currentTime = moment().unix();
-      firestore()
-        .collection(user.uid)
-        .doc("pets")
-        .collection(petName)
-        .doc("settings")
+      firestore().collection(user.uid).doc("petInfo")
         .get()
         .then((data) => {
-          const deviceNumber = data.data().assignedDevice;
+          const deviceNumber = data.data()[petName].assignedDevice;
 
-          firestore()
-            .collection(user.uid)
-            .doc("pets")
+          firestore().collection(user.uid).doc("feedInfo")
             .collection(petName)
-            .doc(currentTime.toString())
-            .set({
+            .add({
               amount: feedInfo,
               device: deviceNumber,
               time: currentTime,
@@ -349,98 +349,99 @@ export default function App() {
     );
   }
   return (
-    <ListContext.Provider
-      value={{
-        deviceList,
-        feedList,
-        userDisplayName: user.displayName,
-        userPhotoURL: user.photoURL,
-      }}
-    >
-      <MainContainer />
-    </ListContext.Provider>
+    // <ListContext.Provider
+    //   value={{
+    //     deviceList,
+    //     feedList,
+    //     userDisplayName: user.displayName,
+    //     userPhotoURL: user.photoURL,
+    //     onFlatListPressable: deleteFeedEvent
+    //   }}
+    // >
+    //   <MainContainer onButtonPress={() => {googleSignOut().then(() => console.log("Signed out!"))}}/>
+    // </ListContext.Provider>
 
-    // <View>
-    //   <TextInput
-    //     style={styles.textInput}
-    //     placeholder="Feed Rex with this amount."
-    //     onChangeText={setNewFeedInfo}
-    //     value={newFeedInfo}
-    //   />
+    <View>
+      <TextInput
+        style={styles.textInput}
+        placeholder="Feed Rex with this amount."
+        onChangeText={setNewFeedInfo}
+        value={newFeedInfo}
+      />
 
-    //   <Button
-    //     title="Feed"
-    //     onPress={() => {
-    //       //get current feed number
-    //       //we're not testing how much food is left here
-    //       addToFeedList(newFeedInfo, "Gricka").then(() => {
-    //         console.log("Feed added.");
-    //       });
-    //     }}
-    //   />
+      <View style={styles.elementMargin}>
+        <Button
+          title="Feed Gricka"
+          onPress={() => {
+            //get current feed number
+            //we're not testing how much food is left here
+            addToFeedList(newFeedInfo, "Gricka")
+          }}
+        />
+      </View>
+    
+      <View style={styles.elementMargin}>
+        <Button
+          title="Feed Rex"
+          onPress={() => {
+            //get current feed number
+            //we're not testing how much food is left here
+            addToFeedList(newFeedInfo, "Rex")
+          }}
+        />
+      </View>
 
-    //   <View style={styles.elementMargin}>
-    //     <Button title="Get user info" onPress={() => console.log(user)} />
-    //   </View>
+      <View style={styles.elementMargin}>
+        <Button title="Get user info" onPress={() => console.log(user)} />
+      </View>
 
-    //   <View style={styles.elementMargin}>
-    //     <Button
-    //       title="Log Rex feeds"
-    //       onPress={() => {
-    //         firestore()
-    //           .collection(user.uid)
-    //           .doc("pets")
-    //           .collection("Rex")
-    //           .where("device", ">=", 0)
-    //           .get()
-    //           .then((data) => {
-    //             console.log(data.docs.map((doc) => doc.data()));
-    //           });
-    //       }}
-    //     />
-    //   </View>
+      <View style={styles.elementMargin}>
+        <Button
+          title="Log Rex feeds"
+          onPress={() => {
+            firestore().collection(user.uid).doc("feedInfo")
+              .collection("Rex")
+              .get()
+              .then((data) => {
+                console.log(data.docs.map((doc) => doc.data()));
+              });
+          }}
+        />
+      </View>
 
-    //   <View style={styles.elementMargin}>
-    //     <Button
-    //       title="Log Gricka feeds"
-    //       onPress={() => {
-    //         firestore()
-    //           .collection(user.uid)
-    //           .doc("pets")
-    //           .collection("Gricka")
-    //           .where("device", ">=", 0)
-    //           .get()
-    //           .then((data) => {
-    //             console.log(data.docs.map((doc) => doc.data()));
-    //           });
-    //       }}
-    //     />
-    //   </View>
+      <View style={styles.elementMargin}>
+        <Button
+          title="Log Gricka feeds"
+          onPress={() => {
+            firestore().collection(user.uid).doc("feedInfo")
+              .collection("Gricka")
+              .get()
+              .then((data) => {
+                console.log(data.docs.map((doc) => doc.data()));
+              });
+          }}
+        />
+      </View>
 
-    //   <View style={styles.elementMargin}>
-    //     <Button
-    //       title={
-    //         "you've pressed this button " + timesPressed.toString() + " times."
-    //       }
-    //       onPress={increaseButtonCount}
-    //     />
-    //   </View>
+      <View style={styles.elementMargin}>
+        <Button
+          title={"Log feedList ids"}
+          onPress={() => {
+            Object.keys(feedList).map((subdata) => {
+              console.log(subdata + ":")
+              feedList[subdata].map((data) => console.log(data))
+            })
+          }}
+        />
+      </View>
 
-    //   <View style={styles.elementMargin}>
-    //     <Button title={"Reset number"} onPress={() => sendTimesPressed(0)} />
-    //   </View>
-
-    //   <View style={styles.elementMargin}>
-    //     <Button title={"Log feedList"} onPress={() => console.log(feedList['Rex'][0].amount)} />
-    //   </View>
-
-    //   <View style={styles.elementMargin}>
-    //     <Button
-    //       title="Sign out"
-    //       onPress={() => googleSignOut().then(() => console.log("Signed out!"))}
-    //     />
-    //   </View>
-    // </View>
+      <View style={styles.elementMargin}>
+        <Button
+          title="Sign out"
+          onPress={() => googleSignOut().then(() => console.log("Signed out!"))}
+        />
+      </View>
+    </View>
   );
 }
 

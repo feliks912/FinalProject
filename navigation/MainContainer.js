@@ -1,4 +1,4 @@
-import { View, Text } from "react-native";
+import { View, Text, Button } from "react-native";
 
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -17,7 +17,7 @@ const petScreenName = "Pets";
 
 const Tab = createBottomTabNavigator();
 
-export default function MainContainer() {
+export default function MainContainer(props) {
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -43,9 +43,22 @@ export default function MainContainer() {
           tabBarstyle: { padding: 10, height: 70 },
         })}
       >
-        <Tab.Screen name={petScreenName} component={PetScreen} />
-        <Tab.Screen name={feedScreenName} component={FeedScreen} />
-        <Tab.Screen name={settingsScreenName} component={SettingsScreen} />
+        <Tab.Screen name={petScreenName} 
+                    component={PetScreen} 
+                    options={{
+                      title: "TESTTITLE",
+                      headerRight: () => (
+                        <Button
+                          onPress={props.onButtonPress}
+                          title="Log out"
+                          color="#000"
+                        />
+                      ),
+                    }}/>
+        <Tab.Screen name={feedScreenName} 
+                    component={FeedScreen} />
+        <Tab.Screen name={settingsScreenName} 
+                    component={SettingsScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );
