@@ -8,8 +8,9 @@ import {
   Vibration,
   ToastAndroid,
   TextInput,
+  setState
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, StrictMode } from "react";
 import moment from "moment";
 
 import "expo-dev-client";
@@ -214,7 +215,7 @@ export default function App() {
           .orderBy("time", "asc")
           .onSnapshot((querySnapshot) => {
             let petFeedList = [];
-            let tempFeedList = feedList;
+            let tempFeedList = [...feedList];
 
             console.log(
               "Local feedList data for pet " + pet + " have been updated."
@@ -250,6 +251,10 @@ export default function App() {
       newPetListener.forEach((listener) => listener());
     };
   }, [petList]);
+
+  useEffect(() => {
+    console.log("useEffect detected change of feedList")
+  }, [feedList])
 
   //On User state change
   function onAuthStateChangedLocal(user) {
@@ -382,7 +387,8 @@ export default function App() {
     );
   }
   return (
-    <ListContext.Provider
+    <StrictMode>
+        <ListContext.Provider
       value={{
         deviceList,
         feedList,
@@ -391,6 +397,10 @@ export default function App() {
         onFlatListPressable: deleteFeedEvent,
         addRandomFeedEvent: addFeedEvent,
         printSomething: printSomethingApp,
+        printTheMessages: (message1, message2) => {
+          console.log(message1)
+          console.log(message2)
+        }
       }}
     >
       <MainContainer
@@ -399,6 +409,8 @@ export default function App() {
         }}
       />
     </ListContext.Provider>
+    </StrictMode>
+    
 
     // <View>
     //   <TextInput

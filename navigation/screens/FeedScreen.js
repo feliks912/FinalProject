@@ -54,12 +54,13 @@ export default function FeedScreen() {
 
       <View style={Styles.elementMargin}>
         <Button
-          title="Force update"
-          onPress={() => {
-            setRandomVar(Math.random())
-            console.log(randomVar)
-            console.log(context.feedList["Gricka"])
-          }}
+          title="Generate random message"
+          onPress={() =>
+            context.printTheMessages(
+              Math.floor(Math.random() * 15),
+              Math.random() > 0.5 ? "Rex" : "Gricka"
+            )
+          }
         />
       </View>
 
