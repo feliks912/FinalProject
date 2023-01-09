@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { StyleSheet, Pressable, Text, View, Image } from "react-native";
+import moment from 'moment'
 
 function FeedItem(props) {
   return (
@@ -8,7 +10,9 @@ function FeedItem(props) {
         onPress={props.onDeleteItem.bind(this, props.id)}
       >
         <View>
-          <Text style={styles.feedText}>{props.text}</Text>
+          <Text>Pet name: {props.petName}</Text>
+          <Text>Feed amount: {props.feedAmount}</Text>
+          <Text>Time: {moment.unix(props.time).format("DD.MM.YYYY HH:mm:ss")}</Text>
         </View>
       </Pressable>
     </View>

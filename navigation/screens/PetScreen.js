@@ -1,5 +1,6 @@
 import { View, Text } from 'react-native'
 import DropDownPicker from 'react-native-dropdown-picker';
+import { useState } from 'react'
 
 export default function PetScreen(navigation) {
     const [open, setOpen] = useState(false);
