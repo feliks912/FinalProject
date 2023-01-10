@@ -8,11 +8,11 @@ function FeedItem(props) {
       <Pressable
         android_ripple={{ color: "#210644", borderless: true }}
         //onPress={props.onDeleteItem.bind(this, props.id)}
-        onPress={props.onDeleteItem(props.id)}
+        onPress={() => props.onDeleteItem(props.name, props.id)}
       >
         <View>
-          <Text>Pet name: {props.petName}</Text>
-          <Text>Feed amount: {props.feedAmount}</Text>
+          <Text>Pet name: {props.name}</Text>
+          <Text>Feed amount: {props.amount}</Text>
           <Text>Time: {moment.unix(props.time).format("DD.MM.YYYY HH:mm:ss")}</Text>
         </View>
       </Pressable>

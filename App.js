@@ -120,13 +120,13 @@ export default function App() {
 
   const prevPetList = useRef([])
   const tempFeedListRef = useRef([])
-
+  //TODO: Error handling, faggot.
   // User authentication state listener
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(onAuthStateChangedLocal);
     return subscriber; // unsubscribe on unmount
   }, []);
-
+  //TODO: Error handling, faggot.
   // core listeners
   useEffect(() => {
     const coreSubscriptionsIsEmpty = Array.isArray(coreSubscriptions.current) && coreSubscriptions.current.length === 0
@@ -141,7 +141,7 @@ export default function App() {
             if (documentSnapshot.exists) {
               let tempInfo = []
               for (let key in documentSnapshot._data) {
-                tempInfo.push({device:key, info:documentSnapshot._data[key]})
+                tempInfo.push({ device: key, info: documentSnapshot._data[key] })
               }
               setDeviceInfo(tempInfo)
             }
@@ -156,7 +156,7 @@ export default function App() {
             if (documentSnapshot.exists) {
               let tempInfo = []
               for (let key in documentSnapshot.data()) {
-                tempInfo.push({name:key, info:documentSnapshot.data()[key]})
+                tempInfo.push({ name: key, info: documentSnapshot.data()[key] })
               }
               setPetInfo(tempInfo)
             }
@@ -174,7 +174,7 @@ export default function App() {
       }
     }
   }, [user])
-
+  //TODO: Error handling, faggot.
   // feed listeners
   useEffect(() => {
     if (petInfo.length) {
@@ -194,6 +194,8 @@ export default function App() {
       }
       if (subscribeTo) {
         subscribeTo.forEach((pet) => {
+          firestoreData('r', user.uid,)
+          firestore().collection(user.uid).doc("feedInfo").collection(pet).get()
           feedSubscriptions.current.push(
             firestore()
               .collection(user.uid)
@@ -217,22 +219,21 @@ export default function App() {
 
                 const arrayLength = tempFeedList.length
 
-                if(arrayLength >= 2){
+                if (arrayLength >= 2) {
                   let index = Object.keys(tempFeedList).filter((key) => tempFeedList[key].name == pet);
 
-                  if(index.length) tempFeedList[index].feeds = petFeedList
-                  else tempFeedList.push({name: pet, feeds:petFeedList})
+                  if (index.length) tempFeedList[index].feeds = petFeedList
+                  else tempFeedList.push({ name: pet, feeds: petFeedList })
                 }
-                else if(arrayLength == 1 && tempFeedList[0].name != pet){
-                  tempFeedList.push({name: pet, feeds:petFeedList})
+                else if (arrayLength == 1 && tempFeedList[0].name != pet) {
+                  tempFeedList.push({ name: pet, feeds: petFeedList })
                 }
-                else tempFeedList = [{name: pet, feeds:petFeedList}]
+                else tempFeedList = [{ name: pet, feeds: petFeedList }]
 
                 console.log("tempFeedList after addition of " + pet)
                 console.log(JSON.stringify(tempFeedList))
 
-                setFeedList(() => 
-                {
+                setFeedList(() => {
                   tempFeedListRef.current = tempFeedList
                   return tempFeedList
                 })
@@ -255,6 +256,11 @@ export default function App() {
       }
     }
   }, [petInfo]);
+  //TODO: Error handling, faggot.
+  //TODO: literally crying
+  async function readUserInfo(user) {
+    return await firestore().collection(user).doc("user").get()
+  }
 
   function onAuthStateChangedLocal(user) {
     setUser(user);
@@ -262,8 +268,8 @@ export default function App() {
     const currentTime = moment().unix();
     if (user) {
       //Check if user exists in the database
-      firestoreData("r", user.uid).then((data) => {
-        if (data.empty) {
+      readUserInfo(user.uid).then((data) => {
+        if (!data.exists) {
           firestoreData("w", user.uid, "user", {
             name: user.displayName,
             email: user.email,
@@ -274,14 +280,17 @@ export default function App() {
             "activity.firstLogin": currentTime,
             "activity.lastLogin": currentTime,
           });
-        } else if (!data.empty) {
+        } else if (data.exists) {
           firestoreData("a", user.uid, "user", {
             "activity.lastLogin": currentTime,
           });
         } else {
           console.error("data is undefined.");
         }
-      });
+      }).catch((err)=>{
+        console.error(err)
+      })
+
       ToastAndroid.show(
         "Successfuly signed in with Google.",
         ToastAndroid.SHORT
@@ -316,23 +325,21 @@ export default function App() {
             .then(() => {
               // I can add error handling here as well, as they are bound to pop out of nowhere
               console.log("App.js: Feed event added.");
-            });
-        });
+            }).catch((err)=>{
+              console.error(err)
+            })
+        })
     }
   }
 
   //Delete feed item of parsed ID
-  async function deleteFeedEvent(id) {
+  async function deleteFeedEvent(name, id) {
     console.log("App.js: attempting to delete event id: " + id);
-
-    let keys = Object.keys(feedList).filter((k) => {
-      return feedList[k].some((o) => o.id === id);
-    });
 
     return firestore()
       .collection(user.uid)
       .doc("feedInfo")
-      .collection(keys[0])
+      .collection(name)
       .doc(id)
       .delete()
       .then(() => console.log("App.js: deleted"));
@@ -420,6 +427,21 @@ export default function App() {
     );
   }
   return (
+    <StrictMode>
+      <ListContext.Provider value={{
+        feedList: JSON.parse(JSON.stringify(feedList)),
+        userDisplayName: user.displayName,
+        userPhotoURL: user.photoURL,
+        addEvent: addFeedEvent,
+        onFlatListPressable: deleteFeedEvent
+      }}>
+        <MainContainer
+          onLogOutButtonPress={() => {
+            googleSignOut().then(() => console.log("App.js: Signed out!"));
+          }}
+        />
+      </ListContext.Provider>
+    </StrictMode>
     // <StrictMode>
     //   <ListContext.Provider
     //     value={{
@@ -439,13 +461,7 @@ export default function App() {
     //     />
     //   </ListContext.Provider>
     // </StrictMode>
-    <StrictMode>
-      <MainContainer
-        onLogOutButtonPress={() => {
-                  googleSignOut().then(() => console.log("App.js: Signed out!"));
-                }}
-      />
-    </StrictMode>
+
 
 
     // <View>

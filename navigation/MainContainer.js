@@ -48,7 +48,7 @@ export default function MainContainer(props) {
             title: "TESTTITLE",
             headerRight: () => (
               <Button
-                onPress={props.onButtonPress}
+                onPress={props.onLogOutButtonPress}
                 title="Log out"
                 color="#000"
               />

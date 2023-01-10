@@ -15,38 +15,21 @@ export default function FeedScreen() {
   const [displayList, setDisplayList] = useState([]);
 
   useEffect(() => {
-    console.log("\n")
-    console.log("FeedScreen.js: ---feedList---")
-    logFeedList(context.feedList)
-    console.log("FeedScreen.js: ---displayList---")
-    logDisplayList(displayList)
-    console.log("\n")
-  })
-
-  useEffect(() => {
-    console.log("FeedScreen.js: context.feedList updated in FeedScreen component")
-    const newList = [];
-    for (let key in context.feedList) {
-      for (let item of context.feedList[key]) {
-        item["petName"] = key;
-        newList.push(item);
+    if (context.feedList.length) {
+      const newList = [];
+      console.log("feedList before sort")
+      console.log(context.feedList)
+      for (let pet in context.feedList) {
+        context.feedList[pet].feeds.forEach((feed) => {
+          newList.push({...feed, name:context.feedList[pet].name})
+        })
       }
+      newList.sort((a, b) => b.time - a.time);
+      console.log("new feedList after sort")
+      console.log(newList)
+      setDisplayList(newList);
     }
-    newList.sort((a, b) => b.time - a.time);
-    setDisplayList(newList);
   }, [context.feedList]);
-
-  function logDisplayList(list) {
-    list.forEach(element => { console.log(element.id) });
-  }
-
-  function logFeedList(list) {
-    for (let key in list) {
-      for (let item of list[key]) {
-        console.log(item.id)
-      }
-    }
-  }
 
   return (
     <View style={Styles.container}>
@@ -62,7 +45,7 @@ export default function FeedScreen() {
         <Button
           title="Generate random feed"
           onPress={() =>
-            context.addRandomFeedEvent(
+            context.addEvent(
               Math.floor(Math.random() * 15),
               Math.random() > 0.5 ? "Rex" : "Gricka"
             )
@@ -75,8 +58,8 @@ export default function FeedScreen() {
         renderItem={(item) => {
           return (
             <FeedItem
-              petName={item.item.petName}
-              feedAmount={item.item.amount}
+              name={item.item.name}
+              amount={item.item.amount}
               time={item.item.time}
               id={item.item.id}
               onDeleteItem={context.onFlatListPressable}
