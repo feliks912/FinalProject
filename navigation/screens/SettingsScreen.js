@@ -1,6 +1,6 @@
 import { View, Text, Image, StyleSheet, FlatList } from "react-native";
 import { useContext, useState, useEffect } from "react";
-import DeviceItem from "../../components/FeedItem";
+import DeviceItem from "../../components/DeviceItem";
 import ListContext from "../../components/Context";
 import moment from "moment";
 

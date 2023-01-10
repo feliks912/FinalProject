@@ -99,6 +99,10 @@ async function firestoreData(action, collection_id, ...props) {
   }
 }
 
+async function readUserInfo(userUID) {
+  return await firestore().collection(userUID).doc("user").get()
+}
+
 const vibrationPattern = [0, 30, 110, 30];
 
 export default function App() {
@@ -194,8 +198,6 @@ export default function App() {
       }
       if (subscribeTo) {
         subscribeTo.forEach((pet) => {
-          firestoreData('r', user.uid,)
-          firestore().collection(user.uid).doc("feedInfo").collection(pet).get()
           feedSubscriptions.current.push(
             firestore()
               .collection(user.uid)
@@ -204,6 +206,8 @@ export default function App() {
               .orderBy("time", "desc")
               .onSnapshot((querySnapshot) => {
                 //TODO: instead of re-writing the whole pet array in feedList, we can use onChanges to simply add or delete the instance but right now I cannot be bothered.
+                console.log("onSnapshot update")
+
                 let petFeedList = [];
                 let tempFeedList = [...tempFeedListRef.current]
 
@@ -217,18 +221,22 @@ export default function App() {
                 console.log("tempFeedList before addition of " + pet)
                 console.log(JSON.stringify(tempFeedList))
 
-                const arrayLength = tempFeedList.length
+                if (!petFeedList.exists) {
+                  delete tempFeedList[pet]
+                } else {
+                  const arrayLength = tempFeedList.length
 
-                if (arrayLength >= 2) {
-                  let index = Object.keys(tempFeedList).filter((key) => tempFeedList[key].name == pet);
+                  if (arrayLength >= 2) {
+                    let index = Object.keys(tempFeedList).filter((key) => tempFeedList[key].name == pet);
 
-                  if (index.length) tempFeedList[index].feeds = petFeedList
-                  else tempFeedList.push({ name: pet, feeds: petFeedList })
+                    if (index.length) tempFeedList[index].feeds = petFeedList
+                    else tempFeedList.push({ name: pet, feeds: petFeedList })
+                  }
+                  else if (arrayLength == 1 && tempFeedList[0].name != pet) {
+                    tempFeedList.push({ name: pet, feeds: petFeedList })
+                  }
+                  else tempFeedList = [{ name: pet, feeds: petFeedList }]
                 }
-                else if (arrayLength == 1 && tempFeedList[0].name != pet) {
-                  tempFeedList.push({ name: pet, feeds: petFeedList })
-                }
-                else tempFeedList = [{ name: pet, feeds: petFeedList }]
 
                 console.log("tempFeedList after addition of " + pet)
                 console.log(JSON.stringify(tempFeedList))
@@ -250,17 +258,13 @@ export default function App() {
       }
       prevPetList.current = tempPetList
     }
-    return () => {
-      if (Array.isArray(feedSubscriptions.current)) {
-        feedSubscriptions.current.forEach((unsubscribe) => unsubscribe())
-      }
-    }
+    // return () => {
+    //   if (Array.isArray(feedSubscriptions.current)) {
+    //     feedSubscriptions.current.forEach((unsubscribe) => unsubscribe())
+    //   }
+    // }
   }, [petList]);
   //TODO: Error handling, faggot.
-  //TODO: literally crying
-  async function readUserInfo(user) {
-    return await firestore().collection(user).doc("user").get()
-  }
 
   function onAuthStateChangedLocal(user) {
     setUser(user);
@@ -287,7 +291,7 @@ export default function App() {
         } else {
           console.error("data is undefined.");
         }
-      }).catch((err)=>{
+      }).catch((err) => {
         console.error(err)
       })
 
@@ -325,7 +329,7 @@ export default function App() {
             .then(() => {
               // I can add error handling here as well, as they are bound to pop out of nowhere
               console.log("App.js: Feed event added.");
-            }).catch((err)=>{
+            }).catch((err) => {
               console.error(err)
             })
         })
