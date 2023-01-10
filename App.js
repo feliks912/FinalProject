@@ -189,7 +189,7 @@ export default function App() {
       const subscribeTo = tempPetList.filter((item) => !prevPetList.current.includes(item)) // Is in new list but not in old
       const unsubscribeFrom = prevPetList.current.filter((item) => !tempPetList.includes(item)) // Is in old list but not in new
 
-      console.log("Subscribe to array:" + subscribeTo)
+      console.log("Subscribe to array: " + subscribeTo)
       console.log("Unsubscribe from array: " + unsubscribeFrom)
 
       if (unsubscribeFrom) {
@@ -198,6 +198,7 @@ export default function App() {
       }
       if (subscribeTo) {
         subscribeTo.forEach((pet) => {
+          console.log("Current pet: " + pet)
           feedSubscriptions.current.push(
             firestore()
               .collection(user.uid)
@@ -220,8 +221,13 @@ export default function App() {
 
                 console.log("tempFeedList before addition of " + pet)
                 console.log(JSON.stringify(tempFeedList))
+                console.log(petFeedList.length)
 
-                if (!petFeedList.exists) {
+                console.log("Acquired " + pet + " list is")
+                console.log(petFeedList)
+                console.log("And it's " + (petFeedList.length !== 0) ? "full of data!" : "dry as a rock.")
+
+                if (petFeedList.length != 0) {
                   delete tempFeedList[pet]
                 } else {
                   const arrayLength = tempFeedList.length
@@ -394,8 +400,14 @@ export default function App() {
 
   //TODO: feedList change log
   useEffect(() => {
-    console.log("App.js: NEW FEEDLIST STATE:")
-    console.log(JSON.parse(JSON.stringify(feedList)))
+    console.log("------App.js new feedList-------")
+    const newList = [];
+      for (let pet in feedList) {
+        feedList[pet].feeds.forEach((feed) => {
+          newList.push({name:feedList[pet].name, ...feed})
+        })
+      }
+      newList.sort((a, b) => a.time - b.time || a.name - b.name);
   }, [feedList])
 
   if (initializing) {
