@@ -17,16 +17,12 @@ export default function FeedScreen() {
   useEffect(() => {
     if (context.feedList.length) {
       const newList = [];
-      console.log("feedList before sort")
-      console.log(context.feedList)
       for (let pet in context.feedList) {
         context.feedList[pet].feeds.forEach((feed) => {
-          newList.push({...feed, name:context.feedList[pet].name})
+          newList.push({name:context.feedList[pet].name, ...feed})
         })
       }
       newList.sort((a, b) => b.time - a.time);
-      console.log("new feedList after sort")
-      console.log(newList)
       setDisplayList(newList);
     }
   }, [context.feedList]);

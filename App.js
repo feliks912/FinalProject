@@ -108,9 +108,9 @@ export default function App() {
   const [newFeedInfo, setNewFeedInfo] = useState("");
   const [IDToDelete, setIDToDelete] = useState("");
 
-  const [petInfo, setPetInfo] = useState([])
+  const [petList, setPetList] = useState([])
   const [feedList, setFeedList] = useState([]);
-  const [deviceInfo, setDeviceInfo] = useState([])
+  const [deviceList, setDeviceList] = useState([])
 
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState(null);
@@ -140,10 +140,10 @@ export default function App() {
           .onSnapshot((documentSnapshot) => {
             if (documentSnapshot.exists) {
               let tempInfo = []
-              for (let key in documentSnapshot._data) {
-                tempInfo.push({ device: key, info: documentSnapshot._data[key] })
+              for (let key in documentSnapshot.data()) {
+                tempInfo.push({ name: key, info: documentSnapshot.data()[key] })
               }
-              setDeviceInfo(tempInfo)
+              setDeviceList(tempInfo)
             }
           })
       )
@@ -158,7 +158,7 @@ export default function App() {
               for (let key in documentSnapshot.data()) {
                 tempInfo.push({ name: key, info: documentSnapshot.data()[key] })
               }
-              setPetInfo(tempInfo)
+              setPetList(tempInfo)
             }
           })
       )
@@ -177,10 +177,10 @@ export default function App() {
   //TODO: Error handling, faggot.
   // feed listeners
   useEffect(() => {
-    if (petInfo.length) {
+    if (petList.length) {
 
       let tempPetList = []
-      petInfo.forEach((pet) => tempPetList.push(pet.name))
+      petList.forEach((pet) => tempPetList.push(pet.name))
 
       const subscribeTo = tempPetList.filter((item) => !prevPetList.current.includes(item)) // Is in new list but not in old
       const unsubscribeFrom = prevPetList.current.filter((item) => !tempPetList.includes(item)) // Is in old list but not in new
@@ -255,7 +255,7 @@ export default function App() {
         feedSubscriptions.current.forEach((unsubscribe) => unsubscribe())
       }
     }
-  }, [petInfo]);
+  }, [petList]);
   //TODO: Error handling, faggot.
   //TODO: literally crying
   async function readUserInfo(user) {
@@ -430,6 +430,7 @@ export default function App() {
     <StrictMode>
       <ListContext.Provider value={{
         feedList: JSON.parse(JSON.stringify(feedList)),
+        deviceList: JSON.parse(JSON.stringify(deviceList)),
         userDisplayName: user.displayName,
         userPhotoURL: user.photoURL,
         addEvent: addFeedEvent,

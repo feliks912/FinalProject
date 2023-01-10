@@ -1,49 +1,49 @@
 import { View, Text, Image, StyleSheet, FlatList } from "react-native";
-import { useContext } from "react";
-import FeedItem from "../../components/FeedItem";
+import { useContext, useState, useEffect } from "react";
+import DeviceItem from "../../components/FeedItem";
 import ListContext from "../../components/Context";
 import moment from "moment";
 
 export default function SettingsScreen() {
   const context = useContext(ListContext);
+  const [displayList, setDisplayList] = useState([]);
 
-  function deleteFunction(props) {
-    console.log(props);
-  }
+  useEffect(() => {
+    if (context.deviceList.length) {
+      const newList = [];
+      console.log("deviceList before sort")
+      console.log(context.deviceList)
+      for (let device in context.deviceList) {
+        newList.push({name:context.deviceList[device].name, ...context.deviceList[device].info})
+      }
+      newList.sort((a, b) => b.time - a.time);
+      console.log("new deviceList after sort")
+      console.log(newList)
+      setDisplayList(newList);
+    }
+  }, [context.deviceList]);
 
-  return (
-    <View style={Styles.container}>
-      <View style={Styles.feedListContainer}>
-        <FlatList
-          data={Object.values(context.deviceList)}
-          renderItem={({ item, index }) => {
-            return (
-              <FeedItem
-                text={
-                  "Device name: " +
-                  Object.keys(context.deviceList)[index] +
-                  "\n" +
-                  "Pet: " +
-                  item.assignedPet +
-                  "\n" +
-                  "device ID: " +
-                  item.deviceId +
-                  "\n" +
-                  "food left: " +
-                  item.foodLeft
-                }
-                onDeleteItem={deleteFunction}
-                id={item.deviceId}
-              />
-            );
-          }}
-          keyExtractor={(item, index) => {
-            return item.deviceId;
-          }}
-        />
-      </View>
+  return(
+    <View>
+      <FlatList
+        data={displayList}
+        renderItem={(item) => {
+          return (
+            <DeviceItem
+              name={item.item.name}
+              assignedPet={item.item.assignedPet}
+              foodLeft={item.item.foodLeft}
+              deviceId={item.item.deviceId}
+            />
+          );
+        }}
+        keyExtractor={(item, index) => {
+          return item.deviceId;
+        }}
+      />
     </View>
-  );
+  )
+
 }
 
 const Styles = StyleSheet.create({
