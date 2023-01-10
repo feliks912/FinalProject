@@ -8,7 +8,6 @@ import IonIcons from "react-native-vector-icons/Ionicons";
 import FeedScreen from "./screens/FeedScreen.js";
 import PetScreen from "./screens/PetScreen.js";
 import SettingsScreen from "./screens/SettingsScreen.js";
-import { useReducer } from "react";
 
 // Screen names
 const feedScreenName = "Feed";
@@ -43,22 +42,22 @@ export default function MainContainer(props) {
           tabBarstyle: { padding: 10, height: 70 },
         })}
       >
-        <Tab.Screen name={petScreenName} 
-                    component={PetScreen} 
-                    options={{
-                      title: "TESTTITLE",
-                      headerRight: () => (
-                        <Button
-                          onPress={props.onButtonPress}
-                          title="Log out"
-                          color="#000"
-                        />
-                      ),
-                    }}/>
-        <Tab.Screen name={feedScreenName} 
-                    component={FeedScreen} />
-        <Tab.Screen name={settingsScreenName} 
-                    component={SettingsScreen} />
+        <Tab.Screen name={petScreenName}
+          component={PetScreen}
+          options={{
+            title: "TESTTITLE",
+            headerRight: () => (
+              <Button
+                onPress={props.onButtonPress}
+                title="Log out"
+                color="#000"
+              />
+            ),
+          }} />
+        <Tab.Screen name={feedScreenName}
+          component={FeedScreen} />
+        <Tab.Screen name={settingsScreenName}
+          component={SettingsScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );

@@ -3,22 +3,28 @@ import {
   Text,
   Image,
   StyleSheet,
-  VirtualizedList,
   FlatList,
   Button,
 } from "react-native";
 import { useContext, useEffect, useState } from "react";
 import FeedItem from "../../components/FeedItem";
 import ListContext from "../../components/Context";
-import moment from "moment";
 
 export default function FeedScreen() {
   const context = useContext(ListContext);
   const [displayList, setDisplayList] = useState([]);
-  const [randomVar, setRandomVar] = useState(0)
 
   useEffect(() => {
-    console.log("context.feedList updated")
+    console.log("\n")
+    console.log("FeedScreen.js: ---feedList---")
+    logFeedList(context.feedList)
+    console.log("FeedScreen.js: ---displayList---")
+    logDisplayList(displayList)
+    console.log("\n")
+  })
+
+  useEffect(() => {
+    console.log("FeedScreen.js: context.feedList updated in FeedScreen component")
     const newList = [];
     for (let key in context.feedList) {
       for (let item of context.feedList[key]) {
@@ -29,6 +35,18 @@ export default function FeedScreen() {
     newList.sort((a, b) => b.time - a.time);
     setDisplayList(newList);
   }, [context.feedList]);
+
+  function logDisplayList(list) {
+    list.forEach(element => { console.log(element.id) });
+  }
+
+  function logFeedList(list) {
+    for (let key in list) {
+      for (let item of list[key]) {
+        console.log(item.id)
+      }
+    }
+  }
 
   return (
     <View style={Styles.container}>
@@ -45,18 +63,6 @@ export default function FeedScreen() {
           title="Generate random feed"
           onPress={() =>
             context.addRandomFeedEvent(
-              Math.floor(Math.random() * 15),
-              Math.random() > 0.5 ? "Rex" : "Gricka"
-            )
-          }
-        />
-      </View>
-
-      <View style={Styles.elementMargin}>
-        <Button
-          title="Generate random message"
-          onPress={() =>
-            context.printTheMessages(
               Math.floor(Math.random() * 15),
               Math.random() > 0.5 ? "Rex" : "Gricka"
             )

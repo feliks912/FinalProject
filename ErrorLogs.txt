@@ -1,0 +1,149 @@
+Useful logs:
+
+Warning: findHostInstance_DEPRECATED is deprecated in StrictMode. findHostInstance_DEPRECATED was passed an instance of TouchableNativeFeedback which is inside StrictMode. Instead, add a ref directly to the element you want to reference. Learn more about using refs safely here: https://reactjs.org/link/strict-mode-find-node
+
+petFeedList listeners ought to be created on petList changes, whos listener is created on user authentication. The useEffect hook triggered on petList change follows changes of petList and dynamically alters petFeedList listener states.
+
+------BEGIN CONSOLE LOG------
+
+ LOG
+ LOG  FeedScreen.js: ---feedList---
+ LOG  FeedScreen.js: ---displayList---
+ LOG  
+ LOG  App.js: Local feedList data for pet Rex have been updated.
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG  FeedScreen.js: ---displayList---
+ LOG 
+ LOG  FeedScreen.js: context.feedList updated
+ LOG  App.js: useEffect detected change of feedList
+
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG  FIXME: clicked on add feed event button
+ LOG  App.js: Feed added.
+ LOG  App.js: Local feedList data for pet Gricka have been updated.
+ LOG  TODO: list completely changes out of nowhere
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 4, "device": 1, "id": "LsqRrmuuDj68xY5cOhff", "petName": "Gricka", "time": 1673290713}       
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG 
+ LOG  FeedScreen.js: context.feedList updated
+ LOG  App.js: useEffect detected change of feedList
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 4, "device": 1, "id": "LsqRrmuuDj68xY5cOhff", "petName": "Gricka", "time": 1673290713}       
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 4, "device": 1, "id": "LsqRrmuuDj68xY5cOhff", "petName": "Gricka", "time": 1673290713}       
+ LOG 
+ LOG  App.js: Feed added.
+ LOG  App.js: Local feedList data for pet Rex have been updated.
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG  {"amount": 13, "device": 0, "id": "YgSUt9YEt2wzWERjmack", "petName": "Rex", "time": 1673290740}
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 4, "device": 1, "id": "LsqRrmuuDj68xY5cOhff", "petName": "Gricka", "time": 1673290713}       
+ LOG 
+ LOG  FeedScreen.js: context.feedList updated
+ LOG  App.js: useEffect detected change of feedList
+ LOG  
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG  {"amount": 13, "device": 0, "id": "YgSUt9YEt2wzWERjmack", "petName": "Rex", "time": 1673290740}
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 13, "device": 0, "id": "YgSUt9YEt2wzWERjmack", "petName": "Rex", "time": 1673290740}
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG 
+ LOG  App.js: Feed added.
+ LOG  App.js: attempting to delete even id: YgSUt9YEt2wzWERjmack
+ LOG  App.js: deleted
+ LOG  App.js: Local feedList data for pet Rex have been updated.
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 13, "device": 0, "id": "YgSUt9YEt2wzWERjmack", "petName": "Rex", "time": 1673290740}
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG  
+ LOG  FeedScreen.js: context.feedList updated
+ LOG  App.js: useEffect detected change of feedList
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG 
+ LOG  App.js: attempting to delete even id: Om8vFsSH0cnrVSN28aeK
+ LOG  App.js: deleted
+ LOG  App.js: Local feedList data for pet Rex have been updated.
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 11, "device": 0, "id": "Om8vFsSH0cnrVSN28aeK", "petName": "Rex", "time": 1673290705}
+ LOG 
+ LOG  FeedScreen.js: context.feedList updated
+ LOG  App.js: useEffect detected change of feedList
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  FeedScreen.js: ---displayList---
+ LOG  
+ LOG  App.js: Local feedList data for pet Rex have been updated.
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 6, "device": 0, "id": "Ixx4gMgi1FS8ijMPqd0e", "petName": "Rex", "time": 1673290753}
+ LOG  FeedScreen.js: ---displayList---
+ LOG 
+ LOG  FeedScreen.js: context.feedList updated
+ LOG  App.js: useEffect detected change of feedList
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 6, "device": 0, "id": "Ixx4gMgi1FS8ijMPqd0e", "petName": "Rex", "time": 1673290753}
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 6, "device": 0, "id": "Ixx4gMgi1FS8ijMPqd0e", "petName": "Rex", "time": 1673290753}
+ LOG 
+ LOG  App.js: Feed added.
+ LOG  App.js: Local feedList data for pet Rex have been updated.
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 6, "device": 0, "id": "Ixx4gMgi1FS8ijMPqd0e", "petName": "Rex", "time": 1673290753}
+ LOG  {"amount": 14, "device": 0, "id": "Ytk3dnm50eRIypXrq3uO", "petName": "Rex", "time": 1673290757}
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 6, "device": 0, "id": "Ixx4gMgi1FS8ijMPqd0e", "petName": "Rex", "time": 1673290753}
+ LOG 
+ LOG  FeedScreen.js: context.feedList updated
+ LOG  App.js: useEffect detected change of feedList
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 6, "device": 0, "id": "Ixx4gMgi1FS8ijMPqd0e", "petName": "Rex", "time": 1673290753}
+ LOG  {"amount": 14, "device": 0, "id": "Ytk3dnm50eRIypXrq3uO", "petName": "Rex", "time": 1673290757}
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 14, "device": 0, "id": "Ytk3dnm50eRIypXrq3uO", "petName": "Rex", "time": 1673290757}
+ LOG  {"amount": 6, "device": 0, "id": "Ixx4gMgi1FS8ijMPqd0e", "petName": "Rex", "time": 1673290753}
+ LOG  FIXME: clicked on add feed event button
+ LOG  App.js: Feed added.
+ LOG  App.js: Local feedList data for pet Gricka have been updated.
+ LOG  TODO: list completely changes out of nowhere.
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 4, "device": 1, "id": "LsqRrmuuDj68xY5cOhff", "petName": "Gricka", "time": 1673290713}       
+ LOG  {"amount": 12, "device": 1, "id": "40G5zSrrCo6KWxktIC62", "petName": "Gricka", "time": 1673290768}      
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 14, "device": 0, "id": "Ytk3dnm50eRIypXrq3uO", "petName": "Rex", "time": 1673290757}
+ LOG  {"amount": 6, "device": 0, "id": "Ixx4gMgi1FS8ijMPqd0e", "petName": "Rex", "time": 1673290753}
+ LOG 
+ LOG  FeedScreen.js: context.feedList updated
+ LOG  App.js: useEffect detected change of feedList
+ LOG 
+ LOG  FeedScreen.js: ---feedList---
+ LOG  {"amount": 4, "device": 1, "id": "LsqRrmuuDj68xY5cOhff", "petName": "Gricka", "time": 1673290713}       
+ LOG  {"amount": 12, "device": 1, "id": "40G5zSrrCo6KWxktIC62", "petName": "Gricka", "time": 1673290768}      
+ LOG  FeedScreen.js: ---displayList---
+ LOG  {"amount": 12, "device": 1, "id": "40G5zSrrCo6KWxktIC62", "petName": "Gricka", "time": 1673290768}      
+ LOG  {"amount": 4, "device": 1, "id": "LsqRrmuuDj68xY5cOhff", "petName": "Gricka", "time": 1673290713}       
+ LOG 
+
+ ------END CONSOLE LOG------

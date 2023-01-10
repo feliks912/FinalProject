@@ -7,7 +7,8 @@ function FeedItem(props) {
     <View style={styles.feedItem}>
       <Pressable
         android_ripple={{ color: "#210644", borderless: true }}
-        onPress={props.onDeleteItem.bind(this, props.id)}
+        //onPress={props.onDeleteItem.bind(this, props.id)}
+        onPress={props.onDeleteItem(props.id)}
       >
         <View>
           <Text>Pet name: {props.petName}</Text>

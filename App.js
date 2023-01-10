@@ -8,16 +8,17 @@ import {
   Vibration,
   ToastAndroid,
   TextInput,
-  setState
+  setState,
 } from "react-native";
-import React, { useState, useEffect, StrictMode } from "react";
+import React, { useState, useEffect, StrictMode, useRef } from "react";
 import moment from "moment";
 
 import "expo-dev-client";
 
 import firestore, { firebase } from "@react-native-firebase/firestore";
 
-import image from "./assets/Cute-cat.jpg";
+import imageCatEats from "./assets/Cute-cat.jpg";
+import imageCatBack from "./assets/Cat-back.jpg";
 
 import {
   GoogleSignin,
@@ -101,27 +102,228 @@ async function firestoreData(action, collection_id, ...props) {
 const vibrationPattern = [0, 30, 110, 30];
 
 export default function App() {
-  const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState();
 
   const [timesPressed, setTimesPressed] = useState(0);
   const [enteredMessageText, setEnteredMessageText] = useState("");
   const [newFeedInfo, setNewFeedInfo] = useState("");
   const [IDToDelete, setIDToDelete] = useState("");
 
-  const [petList, setPetList] = useState([]);
+  const [petInfo, setPetInfo] = useState([])
   const [feedList, setFeedList] = useState([]);
-  const [deviceList, setDeviceList] = useState([]);
+  const [deviceInfo, setDeviceInfo] = useState([])
 
-  //App subscriber
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState(null);
+
+  const coreSubscriptions = useRef([])
+  const feedSubscriptions = useRef([])
+
+  const prevPetList = useRef([])
+  const tempFeedListRef = useRef([])
+
+  // User authentication state listener
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(onAuthStateChangedLocal);
     return subscriber; // unsubscribe on unmount
   }, []);
 
-  //Delete feed item with parsed ID from the list
+  // core listeners
+  useEffect(() => {
+    const coreSubscriptionsIsEmpty = Array.isArray(coreSubscriptions.current) && coreSubscriptions.current.length === 0
+
+    if (user && coreSubscriptionsIsEmpty) { // If user is logged in and no core subsciptions have been made
+      // Device list listener
+      coreSubscriptions.current.push(
+        firestore()
+          .collection(user.uid)
+          .doc("devices")
+          .onSnapshot((documentSnapshot) => {
+            if (documentSnapshot.exists) {
+              let tempInfo = []
+              for (let key in documentSnapshot._data) {
+                tempInfo.push({device:key, info:documentSnapshot._data[key]})
+              }
+              setDeviceInfo(tempInfo)
+            }
+          })
+      )
+      // Pet list listener
+      coreSubscriptions.current.push(
+        firestore()
+          .collection(user.uid)
+          .doc("petInfo")
+          .onSnapshot((documentSnapshot) => {
+            if (documentSnapshot.exists) {
+              let tempInfo = []
+              for (let key in documentSnapshot.data()) {
+                tempInfo.push({name:key, info:documentSnapshot.data()[key]})
+              }
+              setPetInfo(tempInfo)
+            }
+          })
+      )
+      // User logged out, call unsubscribe functions if they have been set and remove them from an array
+    } else if (!user && Array.isArray(coreSubscriptions.current)) {
+      coreSubscriptions.current.forEach((unsubscribe) => unsubscribe())
+      coreSubscriptions.current = []
+    }
+    return () => {
+      if (Array.isArray(coreSubscriptions.current)) {
+        coreSubscriptions.current.forEach((unsubscribe) => unsubscribe())
+        coreSubscriptions.current = []
+      }
+    }
+  }, [user])
+
+  // feed listeners
+  useEffect(() => {
+    if (petInfo.length) {
+
+      let tempPetList = []
+      petInfo.forEach((pet) => tempPetList.push(pet.name))
+
+      const subscribeTo = tempPetList.filter((item) => !prevPetList.current.includes(item)) // Is in new list but not in old
+      const unsubscribeFrom = prevPetList.current.filter((item) => !tempPetList.includes(item)) // Is in old list but not in new
+
+      console.log("Subscribe to array:" + subscribeTo)
+      console.log("Unsubscribe from array: " + unsubscribeFrom)
+
+      if (unsubscribeFrom) {
+        unsubscribeFrom.forEach((unsubscribe) => unsubscribe())
+        feedSubscriptions.current = feedSubscriptions.current.filter((item) => !unsubscribeFrom.includes(item))
+      }
+      if (subscribeTo) {
+        subscribeTo.forEach((pet) => {
+          feedSubscriptions.current.push(
+            firestore()
+              .collection(user.uid)
+              .doc("feedInfo")
+              .collection(pet)
+              .orderBy("time", "desc")
+              .onSnapshot((querySnapshot) => {
+                //TODO: instead of re-writing the whole pet array in feedList, we can use onChanges to simply add or delete the instance but right now I cannot be bothered.
+                let petFeedList = [];
+                let tempFeedList = [...tempFeedListRef.current]
+
+                querySnapshot.forEach((documentSnapshot) => {
+                  petFeedList.push({
+                    ...documentSnapshot.data(),
+                    id: documentSnapshot.id,
+                  });
+                });
+
+                console.log("tempFeedList before addition of " + pet)
+                console.log(JSON.stringify(tempFeedList))
+
+                const arrayLength = tempFeedList.length
+
+                if(arrayLength >= 2){
+                  let index = Object.keys(tempFeedList).filter((key) => tempFeedList[key].name == pet);
+
+                  if(index.length) tempFeedList[index].feeds = petFeedList
+                  else tempFeedList.push({name: pet, feeds:petFeedList})
+                }
+                else if(arrayLength == 1 && tempFeedList[0].name != pet){
+                  tempFeedList.push({name: pet, feeds:petFeedList})
+                }
+                else tempFeedList = [{name: pet, feeds:petFeedList}]
+
+                console.log("tempFeedList after addition of " + pet)
+                console.log(JSON.stringify(tempFeedList))
+
+                setFeedList(() => 
+                {
+                  tempFeedListRef.current = tempFeedList
+                  return tempFeedList
+                })
+
+                // Update pet feed count in database
+                firestore()
+                  .collection(user.uid)
+                  .doc("petInfo")
+                  .update({
+                    [pet + ".feedNum"]: petFeedList.length,
+                  })
+              }))
+        })
+      }
+      prevPetList.current = tempPetList
+    }
+    return () => {
+      if (Array.isArray(feedSubscriptions.current)) {
+        feedSubscriptions.current.forEach((unsubscribe) => unsubscribe())
+      }
+    }
+  }, [petInfo]);
+
+  function onAuthStateChangedLocal(user) {
+    setUser(user);
+    Vibration.vibrate(vibrationPattern);
+    const currentTime = moment().unix();
+    if (user) {
+      //Check if user exists in the database
+      firestoreData("r", user.uid).then((data) => {
+        if (data.empty) {
+          firestoreData("w", user.uid, "user", {
+            name: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+            petCount: 0,
+          });
+          firestoreData("a", user.uid, "user", {
+            "activity.firstLogin": currentTime,
+            "activity.lastLogin": currentTime,
+          });
+        } else if (!data.empty) {
+          firestoreData("a", user.uid, "user", {
+            "activity.lastLogin": currentTime,
+          });
+        } else {
+          console.error("data is undefined.");
+        }
+      });
+      ToastAndroid.show(
+        "Successfuly signed in with Google.",
+        ToastAndroid.SHORT
+      );
+    } else {
+      ToastAndroid.show("You've been signed out", ToastAndroid.SHORT);
+    }
+    if (initializing) setInitializing(false);
+  }
+
+  // Add feed event for petName
+  async function addFeedEvent(foodAmount, petName) {
+    console.log("App.js: About to add " + foodAmount + " to " + petName)
+    if (foodAmount && petName) {
+      const currentTime = moment().unix();
+      firestore()
+        .collection(user.uid)
+        .doc("petInfo")
+        .get()
+        .then((data) => {
+          const deviceNumber = data.data()[petName].assignedDevice;
+
+          firestore()
+            .collection(user.uid)
+            .doc("feedInfo")
+            .collection(petName)
+            .add({
+              amount: parseInt(foodAmount),
+              device: deviceNumber,
+              time: currentTime,
+            })
+            .then(() => {
+              // I can add error handling here as well, as they are bound to pop out of nowhere
+              console.log("App.js: Feed event added.");
+            });
+        });
+    }
+  }
+
+  //Delete feed item of parsed ID
   async function deleteFeedEvent(id) {
-    console.log("attempting to delete even id: " + id);
+    console.log("App.js: attempting to delete event id: " + id);
 
     let keys = Object.keys(feedList).filter((k) => {
       return feedList[k].some((o) => o.id === id);
@@ -133,7 +335,7 @@ export default function App() {
       .collection(keys[0])
       .doc(id)
       .delete()
-      .then(() => console.log("deleted"));
+      .then(() => console.log("App.js: deleted"));
   }
 
   // Handle setting a state
@@ -160,7 +362,7 @@ export default function App() {
     }
   }
 
-  //send a button count *update* to Firebase
+  // Deprecated snapshot example 
   function increaseButtonCount() {
     // Create a reference to the post
     const postReference = firestore().collection(user.uid).doc("user");
@@ -179,198 +381,29 @@ export default function App() {
     });
   }
 
-  function updatePetFeedList(petName, petList) {
-    const postReference = firestore()
-      .collection(user.uid)
-      .doc("feedInfo")
-      .collection(petName);
-    return firestore().runTransaction(async (transaction) => {
-      const postSnapshot = await transaction.get(postReference);
-
-      if (!postSnapshot.exists) {
-        throw "Post does not exist!";
-      }
-
-      transaction.update(postReference, {
-        buttonPresses: postSnapshot.data().buttonPresses + 1,
-      });
-    });
-  }
-
-  // Update the number of button presses in firestore
-  async function sendTimesPressed(number) {
-    await firestoreData("a", user.uid, "user", { buttonPresses: number });
-  }
-
-  // feedList listeners
+  //TODO: feedList change log
   useEffect(() => {
-    let newPetListener = [];
-
-    if (user && petList) {
-      newPetListener = petList.map((pet) => {
-        return firestore()
-          .collection(user.uid)
-          .doc("feedInfo")
-          .collection(pet)
-          .orderBy("time", "asc")
-          .onSnapshot((querySnapshot) => {
-            let petFeedList = [];
-            let tempFeedList = [...feedList];
-
-            console.log(
-              "Local feedList data for pet " + pet + " have been updated."
-            );
-
-            querySnapshot.forEach((documentSnapshot) => {
-              petFeedList.push({
-                ...documentSnapshot.data(),
-                id: documentSnapshot.id,
-              });
-            });
-
-            // Remove existing pet feed list instance in feedList
-            delete tempFeedList[pet];
-
-            // Add obtaned pet feed list to feedList
-            tempFeedList[pet] = petFeedList;
-
-            // Set feedList
-            setFeedList(tempFeedList);
-
-            //Update feed count
-            firestore()
-              .collection(user.uid)
-              .doc("petInfo")
-              .update({
-                [pet + ".feedNum"]: petFeedList.length,
-              });
-          });
-      });
-    }
-    return () => {
-      newPetListener.forEach((listener) => listener());
-    };
-  }, [petList]);
-
-  useEffect(() => {
-    console.log("useEffect detected change of feedList")
+    console.log("App.js: NEW FEEDLIST STATE:")
+    console.log(JSON.parse(JSON.stringify(feedList)))
   }, [feedList])
 
-  //On User state change
-  function onAuthStateChangedLocal(user) {
-    setUser(user);
-    user ? console.log("user!") : console.log("no user.");
-    console.log(user);
-    Vibration.vibrate(vibrationPattern);
-    const currentTime = moment().unix();
-    if (user) {
-      //Initialize or update user datar
-      firestoreData("r", user.uid).then((data) => {
-        if (data.empty) {
-          firestoreData("w", user.uid, "user", {
-            name: user.displayName,
-            email: user.email,
-            photoURL: user.photoURL,
-            petCount: 0,
-            buttonPresses: 0,
-          });
-          firestoreData("a", user.uid, "user", {
-            "activity.firstLogin": currentTime,
-            "activity.lastLogin": currentTime,
-          });
-        } else if (data.empty == false) {
-          firestoreData("a", user.uid, "user", {
-            "activity.lastLogin": currentTime,
-          });
-        } else {
-          console.error("data is undefined.");
-        }
-      });
-
-      // Start listeners on user login (please convert this to hooks)
-
-      // Button press counter
-      firestore()
-        .collection(user.uid)
-        .doc("user")
-        .onSnapshot((documentSnapshot) => {
-          if (documentSnapshot.exists) {
-            setTimesPressed(documentSnapshot.data().buttonPresses);
-          } else console.log("Snapshot doesn't exist?");
-        });
-
-      // Get device list
-      firestore()
-        .collection(user.uid)
-        .doc("devices")
-        .onSnapshot((documentSnapshot) => {
-          if (documentSnapshot.exists) {
-            setDeviceList(documentSnapshot.data());
-          } else console.log("No devices appended to user");
-        });
-
-      // Get pet list
-      firestore()
-        .collection(user.uid)
-        .doc("petInfo")
-        .get()
-        .then((data) => {
-          setPetList(Object.keys(data.data()));
-
-          firestoreData("a", user.uid, "user", {
-            petCount: Object.keys(data.data()).length,
-          });
-        });
-
-      // Show welcome message
-      ToastAndroid.show(
-        "Successfuly signed in with Google.",
-        ToastAndroid.SHORT
-      );
-    } else {
-      ToastAndroid.show("You've been signed out", ToastAndroid.SHORT);
-    }
-    if (initializing) setInitializing(false);
-  }
-
-  async function addFeedEvent(feedInfo, petName) {
-    if (feedInfo && petName) {
-      const currentTime = moment().unix();
-      firestore()
-        .collection(user.uid)
-        .doc("petInfo")
-        .get()
-        .then((data) => {
-          const deviceNumber = data.data()[petName].assignedDevice;
-
-          firestore()
-            .collection(user.uid)
-            .doc("feedInfo")
-            .collection(petName)
-            .add({
-              amount: parseInt(feedInfo),
-              device: deviceNumber,
-              time: currentTime,
-            })
-            .then(() => {
-              // I can add error handling here as well, as they are bound to pop out of nowhere
-              console.log("Feed added.");
-            });
-        });
-    }
-  }
-
-  function printSomethingApp(text) {
-    console.log(text);
-  }
-
-  if (initializing) return null;
+  if (initializing) {
+    return (
+      <View style={styles.container}>
+        <ImageBackground
+          source={imageCatBack}
+          resizeMode="stretch"
+          style={styles.image}
+        ></ImageBackground>
+      </View>
+    )
+  };
 
   if (!user) {
     return (
       <View style={styles.container}>
         <ImageBackground
-          source={image}
+          source={imageCatEats}
           resizeMode="stretch"
           style={styles.image}
         >
@@ -378,7 +411,7 @@ export default function App() {
             style={styles.googleButtonStyle}
             onPress={() =>
               onGoogleButtonPress().then(() => {
-                console.log("Signed in with Google!");
+                console.log("App.js: Signed in with Google!");
               })
             }
           />
@@ -387,30 +420,33 @@ export default function App() {
     );
   }
   return (
+    // <StrictMode>
+    //   <ListContext.Provider
+    //     value={{
+    //       deviceList: [...deviceList],
+    //       petInfo: [...petInfo],
+    //       feedList: [...feedList],
+    //       userDisplayName: user.displayName,
+    //       userPhotoURL: user.photoURL,
+    //       onFlatListPressable: deleteFeedEvent,
+    //       addRandomFeedEvent: addFeedEvent
+    //     }}
+    //   >
+    //     <MainContainer
+    //       onButtonPress={() => {
+    //         googleSignOut().then(() => console.log("App.js: Signed out!"));
+    //       }}
+    //     />
+    //   </ListContext.Provider>
+    // </StrictMode>
     <StrictMode>
-        <ListContext.Provider
-      value={{
-        deviceList,
-        feedList,
-        userDisplayName: user.displayName,
-        userPhotoURL: user.photoURL,
-        onFlatListPressable: deleteFeedEvent,
-        addRandomFeedEvent: addFeedEvent,
-        printSomething: printSomethingApp,
-        printTheMessages: (message1, message2) => {
-          console.log(message1)
-          console.log(message2)
-        }
-      }}
-    >
       <MainContainer
-        onButtonPress={() => {
-          googleSignOut().then(() => console.log("Signed out!"));
-        }}
+        onLogOutButtonPress={() => {
+                  googleSignOut().then(() => console.log("App.js: Signed out!"));
+                }}
       />
-    </ListContext.Provider>
     </StrictMode>
-    
+
 
     // <View>
     //   <TextInput
@@ -453,7 +489,7 @@ export default function App() {
     //     <Button
     //       title="Remove feedEvent with ID"
     //       onPress={() => {
-    //         deleteFeedEvent(IDToDelete).then(() => {console.log("Feed event deleted")})
+    //         deleteFeedEvent(IDToDelete).then(() => {console.log("App.js: Feed event deleted")})
     //       }}
     //     />
     //   </View>
@@ -509,7 +545,7 @@ export default function App() {
     //   <View style={styles.elementMargin}>
     //     <Button
     //       title="Sign out"
-    //       onPress={() => googleSignOut().then(() => console.log("Signed out!"))}
+    //       onPress={() => googleSignOut().then(() => console.log("App.js: Signed out!"))}
     //     />
     //   </View>
     // </View>
