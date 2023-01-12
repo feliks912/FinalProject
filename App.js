@@ -36,16 +36,14 @@ GoogleSignin.configure({
 });
 
 async function onGoogleButtonPress() {
-  // Check if your device supports Google Play
   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-  // Get the users ID token
   const { idToken } = await GoogleSignin.signIn();
+
   // Create a Google credential with the token
   const googleCredential = auth.GoogleAuthProvider.credential(idToken);
 
-  const user_sign_in = auth().signInWithCredential(googleCredential);
-
-  user_sign_in
+  const user_sign_in = auth()
+    .signInWithCredential(googleCredential)
     .then((user) => {
       console.log(user);
     })
@@ -64,40 +62,6 @@ async function googleSignOut() {
     console.error(error);
   }
 }
-
-// async function firestoreData(action, collection_id, ...props) {
-//   try {
-//     if (action == "r") {
-//       if (props.length) {
-//         const temporary_var = await firestore()
-//           .collection(collection_id)
-//           .doc(props[0])
-//           .get();
-//         return temporary_var;
-//       } else {
-//         const temporary_var = await firestore().collection(collection_id).get();
-//         return temporary_var;
-//       }
-//     } else if (action == "w") {
-//       if (props.length == 2) {
-//         await firestore().collection(collection_id).doc(props[0]).set(props[1]);
-//       } else {
-//         await firestore().collection(collection_id).add(props[0]);
-//       }
-//     } else if (action == "a") {
-//       if (props.length != 2)
-//         throw new Error("insufficient arguments in append");
-//       await firestore()
-//         .collection(collection_id)
-//         .doc(props[0])
-//         .update(props[1]);
-//     } else {
-//       throw new Error("inappropriate arguments led to default");
-//     }
-//   } catch (error) {
-//     console.error("Error writing new message to Firebase Database", error);
-//   }
-// }
 
 function userCollection(UID) {
   return firestore()
@@ -128,7 +92,7 @@ export default function App() {
   const tempFeedListRef = useRef([]);
   const databaseInitiated = useRef(false);
 
-  // TODO: Error handling
+  // TODO: Firestore error handling
   // User authentication state listener
 
   useEffect(() => {
@@ -185,6 +149,7 @@ export default function App() {
       coreSubscriptions.current.forEach((unsubscribe) => unsubscribe());
       coreSubscriptions.current = [];
     }
+
     return () => {
       if (Array.isArray(coreSubscriptions.current)) {
         coreSubscriptions.current.forEach((unsubscribe) => unsubscribe());
@@ -288,13 +253,14 @@ export default function App() {
     }
     //FIXME: Return unsubscribe functions in the correct manner, the following executes them immediately.
     // return () => {
-    //   if (Array.isArray(feedSubscriptions.current)) {
+    //   if (Array.isArray(feedSubscriptions.current)) { // Check if array duh
     //     feedSubscriptions.current.forEach((unsubscribe) => unsubscribe())
     //   }
     // }
   }, [petList]);
 
   function onAuthStateChangedLocal(user) {
+    console.log(JSON.stringify(user));
     setUser(user);
     Vibration.vibrate(vibrationPattern);
     const currentTime = moment().unix();
@@ -318,7 +284,7 @@ export default function App() {
               firstSeen: currentTime,
               lastSeen: currentTime,
             });
-            batch.commit().then((databaseInitiated = true));
+            batch.commit().then((databaseInitiated = true)); //FIXME: This doesn't mean the data is received. It only means the function has returned. We must here confirm that the data has been recieved if we want to do this how it's done.
           } else if (!data.empty) {
             databaseInitiated = true;
             userCollection(user.uid).doc("user").update({
@@ -371,10 +337,10 @@ export default function App() {
   }
 
   //Delete feed item of parsed ID
-  async function deleteFeedEvent(name, id) {
+  function deleteFeedEvent(name, id) {
     console.log("App.js: attempting to delete event id: " + id);
 
-    return userCollection(user.uid)
+    userCollection(user.uid)
       .doc("feedInfo")
       .collection(name)
       .doc(id)
