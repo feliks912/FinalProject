@@ -1,11 +1,4 @@
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  FlatList,
-  Button,
-} from "react-native";
+import { View, Text, Image, StyleSheet, FlatList, Button } from "react-native";
 import { useContext, useEffect, useState } from "react";
 import FeedItem from "../../components/FeedItem";
 import Context from "../../components/Context";
@@ -14,18 +7,27 @@ export default function FeedScreen() {
   const context = useContext(Context);
   const [displayList, setDisplayList] = useState([]);
 
+  // Prepare the list for display
   useEffect(() => {
-    if (context.feedList.length) {
-      console.log("----FeedItem.js new feedList----")
-      const newList = [];
-      for (let pet in context.feedList) {
-        context.feedList[pet].feeds.forEach((feed) => {
-          newList.push({name:context.feedList[pet].name, ...feed})
-        })
-      }
-      newList.sort((a, b) => a.time - b.time || a.name - b.namer);
-      setDisplayList(newList);
+    console.log("useEffect in FeedScreen");
+    console.log(JSON.stringify(context.feedList));
+    console.log("----FeedItem.js new feedList----");
+
+    const newList = [];
+
+    for (let petId in context.feedList) {
+      context.feedList[petId].feeds.forEach((feed) => {
+        newList.push({
+          name: context.petList[petId].name,
+          petId: context.feedList[petId].id, // What a twisted world
+          ...feed,
+        }); // Notice we're taking the name from petList
+      });
     }
+
+    newList.sort((a, b) => a.time - b.time || a.name - b.name); // Sort on time, if it's sorted on time sort on name == sort on time then name. Useful for debugging
+    console.log(newList);
+    setDisplayList(newList);
   }, [context.feedList]);
 
   return (
@@ -52,18 +54,22 @@ export default function FeedScreen() {
 
       <FlatList
         data={displayList}
-        renderItem={(item) => {
+        renderItem={(data) => {
+          console.log("----------------------------------------");
+          console.log(data.item);
           return (
             <FeedItem
-              name={item.item.name}
-              amount={item.item.amount}
-              time={item.item.time}
-              id={item.item.id}
+              petId={data.item.petId}
+              name={data.item.name}
+              amount={data.item.amount}
+              time={data.item.time}
+              id={data.item.id}
               onDeleteItem={context.onFlatListPressable}
             />
           );
         }}
         keyExtractor={(item, index) => {
+          //TODO: Assuming firebase doesn't create 2 documents of equal ID for different pets. We can combine pet and document id's to create an unique ID sometime in the future
           return item.id;
         }}
       />

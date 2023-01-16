@@ -8,9 +8,13 @@ export default function FeedItem(props) {
       <Pressable
         android_ripple={{ color: "#210644", borderless: true }}
         //onPress={props.onDeleteItem.bind(this, props.id)}
-        onPress={() => props.onDeleteItem(props.name, props.id)}
+        onPress={() => props.onDeleteItem(props.petId, props.id).then(() => {
+          console.log("feed deleted.")
+        })}
       >
         <View>
+          <Text style={Styles.feedText}>ID: {props.id}</Text>
+          <Text style={Styles.feedText}>Pet ID: {props.petId}</Text>
             <Text style={Styles.feedText}>Pet name: {props.name}</Text>
             <Text style={Styles.feedText}>Feed amount: {props.amount}</Text>
             <Text style={Styles.feedText}>Time: {moment.unix(props.time).format("DD.MM.YYYY HH:mm:ss")}</Text>

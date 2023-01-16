@@ -29,6 +29,7 @@ import auth from "@react-native-firebase/auth";
 import MainContainer from "./navigation/MainContainer";
 
 import Context from "./components/Context";
+
 import { useCardAnimation } from "@react-navigation/stack";
 
 GoogleSignin.configure({
@@ -71,11 +72,7 @@ function userCollection(UID) {
 const vibrationPattern = [0, 30, 110, 30];
 
 export default function App() {
-  const [timesPressed, setTimesPressed] = useState(0);
   const [enteredMessageText, setEnteredMessageText] = useState("");
-  const [newFeedInfo, setNewFeedInfo] = useState("");
-  const [petDeleteId, setPetDeleteId] = useState("");
-  const [eventDeleteId, setEventDeleteId] = useState("");
 
   const [petList, setPetList] = useState([]);
   const [feedList, setFeedList] = useState([]);
@@ -84,16 +81,13 @@ export default function App() {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState(null);
 
-  const [petName, setPetName] = useState("");
-  const [petFeedAmount, setPetFeedAmount] = useState("");
-  const [petAssignedDeviceId, setPetAssignedDeviceId] = useState("");
+  const [databaseInitiated, setDatabaseInitiated] = useState(false);
 
   const coreSubscriptions = useRef([]);
   const feedSubscriptions = useRef([]);
 
   const prevPetList = useRef([]);
   const tempFeedListRef = useRef([]);
-  const databaseInitiated = useRef(false);
   const databaseChecked = useRef(false);
 
   // TODO: Firestore error handling
@@ -108,7 +102,12 @@ export default function App() {
   // TODO: Some more work here
   // petList, deviceList listeners
   useEffect(() => {
-    if (!databaseInitiated.current) return;
+    console.log(
+      "Entered useEffect databaseInitiated and it's " +
+        databaseInitiated.toString()
+    );
+
+    if (!databaseInitiated) return;
 
     const coreSubscriptionsIsEmpty =
       Array.isArray(coreSubscriptions.current) &&
@@ -175,127 +174,156 @@ export default function App() {
 
   // feedList listeners
   useEffect(() => {
-    console.log("PetList updated, hook triggered.");
-    if (petList.length) {
-      let tempPetList = [];
+    console.log(
+      "Entered useEffect petList, it's length is " + petList.length.toString()
+    );
 
-      console.log(petList);
+    if (petList.length == 0) return;
 
-      petList.forEach((petId) => tempPetList.push(petId.id));
+    let tempPetList = [];
 
-      const subscribeTo = tempPetList.filter(
-        (item) => !prevPetList.current.includes(item)
-      ); // Is in new list but not in old
-      const unsubscribeFrom = prevPetList.current.filter(
-        (item) => !tempPetList.includes(item)
-      ); // Is in old list but not in new
+    console.log(petList);
 
-      console.log("Subscribe to array: " + subscribeTo);
-      console.log("Unsubscribe from array: " + unsubscribeFrom);
+    petList.forEach((petId) => tempPetList.push(petId.id));
 
-      if (unsubscribeFrom) {
-        const newSubscriptions = feedSubscriptions.current.filter(
-          (subscription) => {
-            if (unsubscribeFrom.includes(subscription.id)) {
-              subscription.function();
-              return false;
-            }
-            return true;
+    const subscribeTo = tempPetList.filter(
+      (item) => !prevPetList.current.includes(item)
+    ); // Is in new list but not in old
+    const unsubscribeFrom = prevPetList.current.filter(
+      (item) => !tempPetList.includes(item)
+    ); // Is in old list but not in new
+
+    console.log("Subscribe to array: " + subscribeTo);
+    console.log("Unsubscribe from array: " + unsubscribeFrom);
+
+    if (unsubscribeFrom) {
+      const newSubscriptions = feedSubscriptions.current.filter(
+        (subscription) => {
+          if (unsubscribeFrom.includes(subscription.id)) {
+            subscription.function();
+            return false;
           }
-        );
-        feedSubscriptions.current = newSubscriptions;
-      }
-      if (subscribeTo) {
-        subscribeTo.forEach((petId) => {
-          console.log("Current pet: " + petId);
-          feedSubscriptions.current.push({
-            id: petId,
-            function: userCollection(user.uid)
-              .doc("feedInfo")
-              .collection(petId)
-              .orderBy("time", "desc")
-              .onSnapshot((querySnapshot) => {
-                //TODO: instead of re-writing the whole pet array in feedList, we can use onChanges to simply add or delete the instance but right now I cannot be bothered.
-                console.log("onSnapshot update");
+          return true;
+        }
+      );
+      feedSubscriptions.current = newSubscriptions;
+    }
+    if (subscribeTo) {
+      subscribeTo.forEach((petId) => {
+        console.log("Subscribing to a pet id: " + petId);
+        feedSubscriptions.current.push({
+          id: petId,
+          function: userCollection(user.uid)
+            .doc("feedInfo")
+            .collection(petId)
+            .orderBy("time", "desc")
+            .onSnapshot((querySnapshot) => {
+              //TODO: instead of re-writing the whole pet array in feedList, we can use onChanges to simply add or delete the instance but right now I cannot be bothered.
+              console.log("onSnapshot update");
 
-                let petFeedList = [];
-                let tempFeedList = [...tempFeedListRef.current]; // Non-linking copy
+              let petFeedList = [];
+              let tempFeedList = [...tempFeedListRef.current]; // Non-linking copy
 
-                querySnapshot.forEach((documentSnapshot) => {
-                  petFeedList.push({
-                    ...documentSnapshot.data(),
-                    id: documentSnapshot.id,
-                  });
+              querySnapshot.forEach((documentSnapshot) => {
+                petFeedList.push({
+                  ...documentSnapshot.data(),
+                  id: documentSnapshot.id,
                 });
+              });
 
-                console.log("tempFeedList before addition of " + petId);
-                console.log(JSON.stringify(tempFeedList));
-                console.log(petFeedList.length);
+              console.log("tempFeedList before addition of " + petId);
+              console.log(JSON.stringify(tempFeedList));
+              console.log(petFeedList.length);
 
-                console.log("Acquired " + petId + " list is");
+              console.log("Acquired " + petId + " list is");
+              console.log(petFeedList);
+              if (petFeedList.length) {
+                console.log("And it has data.");
+              } else {
+                console.log("And it's empty.");
+              }
+
+              //TODO: Please find an alternative
+              if (petFeedList.length == 0) {
+                console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+                console.log("petFeedList is empty");
                 console.log(petFeedList);
-                if (petFeedList.length) {
-                  console.log("And it has data.");
-                } else {
-                  console.log("And it's empty.");
-                }
-
-                //FIXME: Please edit all this and comment it.
-                if (petFeedList.length != 0) {
-                  delete tempFeedList[petId]; // If the new pet feed list has no feeds, we delete all pet feeds residue from the local list
-                } else {
-                  const arrayLength = tempFeedList.length;
-                  if (arrayLength >= 2) {
-                    // More than two pets are in the local list, we must find the key of the pet we want to edit
-                    let index = Object.keys(tempFeedList).filter(
-                      // Returns an index of the local list where pet is stored
-                      (key) => tempFeedList[key].id == petId
-                    );
-
-                    if (index && index.length)
-                      tempFeedList[index].feeds = petFeedList;
-                    // feeds exist so we overwrite the 'feeds' key
-                    else tempFeedList.push({ id: petId, feeds: petFeedList }); // Otherwise we create a new object with keys id and feeds
-                  } else if (arrayLength == 1 && tempFeedList[0].name != pet) {
-                    // There is only one pet in the local list, and it's not the current one
-                    tempFeedList.push({ id: petId, feeds: petFeedList }); // Create a new object with keys id and feeds
-                  } else tempFeedList = [{ id: petId, feeds: petFeedList }]; // Otherwise we create a new list with a new object with keys id and feeds
-                }
-
-                console.log("tempFeedList after addition of " + petId);
-                console.log(JSON.stringify(tempFeedList));
-
-                setFeedList(() => {
-                  // Functional useState using previous value ensures chronological execution
-                  tempFeedListRef.current = tempFeedList;
-                  return tempFeedList;
-                });
-
-                // Update pet feed count in database
-                userCollection(user.uid)
-                  .doc("petInfo")
-                  .get()
-                  .then((data) => {
-                    console.log("that data");
-                    console.log(data.data());
+                console.log(tempFeedList);
+                // let index = Object.keys(tempFeedList).filter(
+                //   // Returns an index of the local list where pet is stored
+                //   (key) => tempFeedList[key].id == petId
+                // );
+                tempFeedList = tempFeedList.filter((obj) => obj.id !== petId); // If the new pet feed list has no feeds, we delete all pet feeds residue from the local list
+                console.log(tempFeedList);
+              } else {
+                const arrayLength = tempFeedList.length;
+                console.log(
+                  "currently tempFeedList has " +
+                    arrayLength.toString() +
+                    " members."
+                );
+                if (arrayLength >= 2) {
+                  // More than two pets are in the local list, we must find the key of the pet we want to edit
+                  let index = Object.keys(tempFeedList).filter(
                     // Returns an index of the local list where pet is stored
-                    let index = Object.keys(data.data()).filter(
-                      (key) => data.data()[key].id == petId
-                    );
-                    if (index.length) {
-                      data.data()[index[0]].feedCount = petFeedList.length;
+                    (key) => tempFeedList[key].id == petId
+                  );
+
+                  //FIXME: Was using index here but index is an array with one value so index[0] must be used.
+                  if (index[0] && index.length)
+                    tempFeedList[index[0]].feeds = petFeedList;
+                  // feeds exist so we overwrite the 'feeds' key
+                  else tempFeedList.push({ id: petId, feeds: petFeedList }); // Otherwise we create a new object with keys id and feeds
+                } else if (arrayLength == 1 && tempFeedList[0].id != petId) {
+                  // There is only one pet in the local list, and it's not the current one
+                  tempFeedList.push({ id: petId, feeds: petFeedList }); // Create a new object with keys id and feeds
+                } else tempFeedList = [{ id: petId, feeds: petFeedList }]; // Otherwise we create a new list with a new object with keys id and feeds
+              }
+
+              console.log("tempFeedList after addition of " + petId);
+              console.log(tempFeedList);
+              console.log(JSON.stringify(tempFeedList));
+              for (let pet in tempFeedList) {
+                console.log(tempFeedList[pet]);
+              }
+
+              setFeedList(() => {
+                // Functional useState using previous value ensures chronological execution
+                tempFeedListRef.current = tempFeedList;
+                return tempFeedList;
+              });
+
+              // Update pet last feed time
+              userCollection(user.uid)
+                .doc("petInfo")
+                .get()
+                .then((data) => {
+                  console.log("that data");
+                  console.log(data.data());
+                  // Returns an index of the local list where pet is stored
+                  let index = Object.keys(data.data()).filter(
+                    (key) => data.data()[key].id == petId
+                  );
+                  if (index.length) {
+                    // Conditionally refresh last feed time
+                    const lastListFeed = Math.max(
+                      ...petFeedList.map((o) => o.time),
+                      0
+                    ); // "Find the object whose property "Y" has the greatest value in an array of objects, default to 0" thank you Stackexchange.
+                    if (lastListFeed > data.data()[index[0]].lastFeed) {
+                      data.data()[index[0]].lastFeed = lastListFeed;
                       userCollection(user.uid)
                         .doc("petInfo")
                         .update(data.data())
                         .then(() => console.log("update successful."));
                     }
-                  });
-              }),
-          });
+                  }
+                });
+            }),
         });
-      }
-      prevPetList.current = tempPetList;
+      });
     }
+    prevPetList.current = tempPetList;
     //FIXME: Return unsubscribe functions in the correct manner, the following executes them immediately.
     // return () => {
     //   if (Array.isArray(feedSubscriptions.current)) { // Check if array duh
@@ -306,8 +334,10 @@ export default function App() {
 
   function onAuthStateChangedLocal(user) {
     setUser(user);
+
     Vibration.vibrate(vibrationPattern);
     const currentTime = moment().unix();
+
     if (user && !databaseChecked.current) {
       //Check if user exists in the database
       userCollection(user.uid)
@@ -334,11 +364,13 @@ export default function App() {
                 .then((documentSnapshot) => {
                   if (documentSnapshot && !documentSnapshot.empty)
                     // The document has been written,
-                    databaseInitiated.current = true; //We can trigger
+                    setDatabaseInitiated(() => true); //We can trigger
+                  console.log("database initiated");
                 });
             });
           } else if (!data.empty) {
-            databaseInitiated.current = true; // User data already exists in the database
+            console.log("database already initiated");
+            setDatabaseInitiated(() => true); // User data already exists in the database
             userCollection(user.uid).doc("user").update({
               lastSeen: currentTime,
             });
@@ -359,10 +391,10 @@ export default function App() {
   }
 
   // Add feed event for petName
-  function addFeedEvent(foodAmount, petId) {
+  async function addFeedEvent(foodAmount, petId) {
     if (!(foodAmount && petId)) return 1;
 
-    console.log("App.js: About to add " + foodAmount + " to " + petName);
+    console.log("App.js: About to add " + foodAmount + " to " + petId);
     const currentTime = moment().unix();
     //We need to fetch the pet information to see which device they are assigned to (there are better local storage ways). Error if the pet doesn't exist, but in the final app we don't add feeds, only read and delete them
     userCollection(user.uid)
@@ -380,6 +412,21 @@ export default function App() {
             time: currentTime,
           })
           .then(() => {
+            userCollection(user.uid)
+              .doc("petInfo")
+              .get()
+              .then((data) => {
+                let index = Object.keys(data.data()).filter(
+                  (key) => data.data()[key].id == petId
+                );
+                if (index.length) {
+                  data.data()[index[0]].feedCount++;
+                  userCollection(user.uid)
+                    .doc("petInfo")
+                    .update(data.data())
+                    .then(() => console.log("update successful."));
+                }
+              });
             // I can add error handling here as well, as they are bound to pop out of nowhere
             console.log("App.js: Feed event added.");
           })
@@ -390,19 +437,18 @@ export default function App() {
   }
 
   //Delete feed item of parsed ID
-  function deleteFeedEvent(petId, feedId) {
+  async function deleteFeedEvent(petId, feedId) {
     if (!(petId && feedId)) return 1;
 
     console.log(
-      "App.js: attempting to delete pet feed " + petName + "event id " + id
+      "App.js: attempting to delete pet feed " + petId + " event id " + feedId
     );
 
     userCollection(user.uid)
       .doc("feedInfo")
       .collection(petId)
       .doc(feedId)
-      .delete()
-      .then(() => console.log("App.js: deleted"));
+      .delete();
   }
 
   function addPet(petName, feedAmount, assignedDeviceId) {
@@ -414,6 +460,7 @@ export default function App() {
       .get()
       .then((data) => {
         let match = false;
+        let randomId;
         do {
           randomId = Math.random().toString(36).slice(2, 10);
           match = false;
@@ -423,10 +470,11 @@ export default function App() {
           }
 
           if (!match) {
-            userCollection(user.uid)
+            userCollection(user.uid) // Listeners aren't created if there is no documents in a collection, so a dummy document must be made
               .doc("feedInfo")
               .collection(randomId)
-              .add({});
+              .doc("_init_")
+              .set({});
             userCollection(user.uid)
               .doc("petInfo")
               .update({
@@ -533,13 +581,18 @@ export default function App() {
   //TODO: feedList change log
   useEffect(() => {
     console.log("------App.js new feedList-------");
+    console.log(feedList);
+    console.log(JSON.stringify(feedList));
     const newList = [];
     for (let pet in feedList) {
-      feedList[pet].feeds.forEach((feed) => {
-        newList.push({ name: feedList[pet].name, ...feed });
-      });
+      console.log(feedList[pet]);
     }
-    newList.sort((a, b) => a.time - b.time || a.name - b.name);
+    // for (let pet in feedList) {
+    //   feedList[pet].feeds.forEach((feed) => {
+    //     newList.push({ name: feedList[pet].name, ...feed });
+    //   });
+    // }
+    // newList.sort((a, b) => a.time - b.time || a.name - b.name);
   }, [feedList]);
 
   if (initializing) {
@@ -575,110 +628,28 @@ export default function App() {
     );
   }
   return (
-    // <StrictMode>
-    //   <Context.Provider
-    //     value={{
-    //       feedList: JSON.parse(JSON.stringify(feedList)),
-    //       deviceList: JSON.parse(JSON.stringify(deviceList)),
-    //       petList: JSON.parse(JSON.stringify(petList)),
-    //       userDisplayName: user.displayName,
-    //       userPhotoURL: user.photoURL,
-    //       addEvent: addFeedEvent,
-    //       onFlatListPressable: deleteFeedEvent,
-    //     }}
-    //   >
-    //     <MainContainer
-    //       onLogOutButtonPress={() => {
-    //         googleSignOut().then(() => console.log("App.js: Signed out!"));
-    //       }}
-    //     />
-    //   </Context.Provider>
-    // </StrictMode>
-
-    <View>
-      <TextInput
-        style={styles.textInput}
-        placeholder="New pet name"
-        onChangeText={setPetName}
-        value={petName}
-      />
-      <TextInput
-        style={styles.textInput}
-        placeholder="New pet feed amount"
-        onChangeText={setPetFeedAmount}
-        value={petFeedAmount}
-      />
-      <TextInput
-        style={styles.textInput}
-        placeholder="New pet assigned device ID"
-        onChangeText={setPetAssignedDeviceId}
-        value={petAssignedDeviceId}
-      />
-
-      <View style={{ margin: 10, color: "#49e941" }}>
-        <Button
-          title="Add pet"
-          onPress={() => {
-            //get current feed number
-            //we're not testing how much food is left here
-            addPet(petName, petFeedAmount, petAssignedDeviceId);
+    <StrictMode>
+      <Context.Provider
+        value={{
+          feedList: JSON.parse(JSON.stringify(feedList)),
+          deviceList: JSON.parse(JSON.stringify(deviceList)),
+          petList: JSON.parse(JSON.stringify(petList)),
+          userDisplayName: user.displayName,
+          userPhotoURL: user.photoURL,
+          addEvent: addFeedEvent,
+          onFlatListPressable: deleteFeedEvent,
+          addFeedEvent: addFeedEvent,
+          addPet: addPet,
+          deleteFeedEvent: deleteFeedEvent,
+        }}
+      >
+        <MainContainer
+          onLogOutButtonPress={() => {
+            googleSignOut().then(() => console.log("App.js: Signed out!"));
           }}
         />
-      </View>
-
-      <TextInput
-        style={styles.textInput}
-        placeholder="Feed first pet this amount."
-        onChangeText={setNewFeedInfo}
-        value={newFeedInfo}
-      />
-
-      <View style={styles.elementMargin}>
-        <Button
-          title="Feed first pet"
-          onPress={() => {
-            //get current feed number
-            //we're not testing how much food is left here
-            console.log(petList);
-            addFeedEvent(newFeedInfo, petList[0].id);
-          }}
-        />
-      </View>
-
-      <TextInput
-        style={styles.textInput}
-        placeholder="ID of pet to remove"
-        onChangeText={setPetDeleteId}
-        value={petDeleteId}
-      />
-
-      <TextInput
-        style={styles.textInput}
-        placeholder="feed event ID to remove"
-        onChangeText={setEventDeleteId}
-        value={eventDeleteId}
-      />
-
-      <View style={styles.elementMargin}>
-        <Button
-          title="Remove feedEvent with ID"
-          onPress={() => {
-            deleteFeedEvent(petDeleteId, eventDeleteId).then(() => {
-              console.log("App.js: Feed event deleted");
-            });
-          }}
-        />
-      </View>
-
-      <View style={styles.elementMargin}>
-        <Button
-          title="Sign out"
-          onPress={() =>
-            googleSignOut().then(() => console.log("App.js: Signed out!"))
-          }
-        />
-      </View>
-    </View>
+      </Context.Provider>
+    </StrictMode>
   );
 }
 
