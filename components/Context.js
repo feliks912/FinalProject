@@ -1,3 +1,3 @@
 import { createContext } from 'react'
 
-export default ListContext = createContext()
+export default Context = createContext()

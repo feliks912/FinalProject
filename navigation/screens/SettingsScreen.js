@@ -1,14 +1,14 @@
 import { View, Text, Image, StyleSheet, FlatList } from "react-native";
 import { useContext, useState, useEffect } from "react";
 import DeviceItem from "../../components/DeviceItem";
-import ListContext from "../../components/Context";
+import Context from "../../components/Context";
 import moment from "moment";
 
 export default function SettingsScreen() {
-  const context = useContext(ListContext);
+  const context = useContext(Context);
   const [displayList, setDisplayList] = useState([]);
 
-  useEffect(() => {
+  useEffect(() => { // Restructure the list on device mount and device change
     if (context.deviceList.length) {
       const newList = [];
       console.log("deviceList before sort")

@@ -8,10 +8,10 @@ import {
 } from "react-native";
 import { useContext, useEffect, useState } from "react";
 import FeedItem from "../../components/FeedItem";
-import ListContext from "../../components/Context";
+import Context from "../../components/Context";
 
 export default function FeedScreen() {
-  const context = useContext(ListContext);
+  const context = useContext(Context);
   const [displayList, setDisplayList] = useState([]);
 
   useEffect(() => {
