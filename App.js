@@ -28,7 +28,8 @@ import auth from "@react-native-firebase/auth";
 
 import MainContainer from "./navigation/MainContainer";
 
-import ListContext from "./components/Context";
+import Context from "./components/Context";
+import { useCardAnimation } from "@react-navigation/stack";
 
 GoogleSignin.configure({
   webClientId:
@@ -64,10 +65,7 @@ async function googleSignOut() {
 }
 
 function userCollection(UID) {
-  return firestore()
-    .collection("catFeeder_v1")
-    .doc("userCollection")
-    .collection(UID);
+  return firestore().collection("catFeeder_v1").doc("userData").collection(UID);
 }
 
 const vibrationPattern = [0, 30, 110, 30];
@@ -76,7 +74,8 @@ export default function App() {
   const [timesPressed, setTimesPressed] = useState(0);
   const [enteredMessageText, setEnteredMessageText] = useState("");
   const [newFeedInfo, setNewFeedInfo] = useState("");
-  const [IDToDelete, setIDToDelete] = useState("");
+  const [petDeleteId, setPetDeleteId] = useState("");
+  const [eventDeleteId, setEventDeleteId] = useState("");
 
   const [petList, setPetList] = useState([]);
   const [feedList, setFeedList] = useState([]);
@@ -85,12 +84,17 @@ export default function App() {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState(null);
 
+  const [petName, setPetName] = useState("");
+  const [petFeedAmount, setPetFeedAmount] = useState("");
+  const [petAssignedDeviceId, setPetAssignedDeviceId] = useState("");
+
   const coreSubscriptions = useRef([]);
   const feedSubscriptions = useRef([]);
 
   const prevPetList = useRef([]);
   const tempFeedListRef = useRef([]);
   const databaseInitiated = useRef(false);
+  const databaseChecked = useRef(false);
 
   // TODO: Firestore error handling
   // User authentication state listener
@@ -100,27 +104,35 @@ export default function App() {
     return subscriber; // unsubscribe on unmount
   }, []);
 
-  // core listeners
+  // FIXME: If petInfo or deviceInfo are empty documents at the time of running the app, will these listeners be created?
+  // TODO: Some more work here
+  // petList, deviceList listeners
   useEffect(() => {
-    if (!databaseInitiated) return;
+    if (!databaseInitiated.current) return;
 
     const coreSubscriptionsIsEmpty =
       Array.isArray(coreSubscriptions.current) &&
       coreSubscriptions.current.length === 0;
 
     if (user && coreSubscriptionsIsEmpty) {
+      console.log("Creating core listeners");
+      // Double trigger safety mechanism
       // If user is logged in and no core subsciptions have been made
       // Device list listener
       coreSubscriptions.current.push(
         userCollection(user.uid)
-          .doc("devices")
+          .doc("deviceInfo")
           .onSnapshot((documentSnapshot) => {
+            console.log("deviceInfo updated");
             if (documentSnapshot.exists) {
               let tempInfo = [];
               for (let key in documentSnapshot.data()) {
+                // List through keys of random values
+                let { name, id, ...rest } = documentSnapshot.data()[key]; // Deconstruct device information
                 tempInfo.push({
-                  name: key,
-                  info: documentSnapshot.data()[key],
+                  name: name,
+                  id: id,
+                  info: rest,
                 });
               }
               setDeviceList(tempInfo);
@@ -132,12 +144,15 @@ export default function App() {
         userCollection(user.uid)
           .doc("petInfo")
           .onSnapshot((documentSnapshot) => {
+            console.log("petInfo updated");
             if (documentSnapshot.exists) {
               let tempInfo = [];
               for (let key in documentSnapshot.data()) {
+                let { name, id, ...rest } = documentSnapshot.data()[key];
                 tempInfo.push({
-                  name: key,
-                  info: documentSnapshot.data()[key],
+                  name: name,
+                  id: id,
+                  info: rest,
                 });
               }
               setPetList(tempInfo);
@@ -156,13 +171,17 @@ export default function App() {
         coreSubscriptions.current = [];
       }
     };
-  }, [user, databaseInitiated]);
+  }, [databaseInitiated]);
 
-  // feed listeners
+  // feedList listeners
   useEffect(() => {
+    console.log("PetList updated, hook triggered.");
     if (petList.length) {
       let tempPetList = [];
-      petList.forEach((pet) => tempPetList.push(pet.name));
+
+      console.log(petList);
+
+      petList.forEach((petId) => tempPetList.push(petId.id));
 
       const subscribeTo = tempPetList.filter(
         (item) => !prevPetList.current.includes(item)
@@ -175,25 +194,32 @@ export default function App() {
       console.log("Unsubscribe from array: " + unsubscribeFrom);
 
       if (unsubscribeFrom) {
-        unsubscribeFrom.forEach((unsubscribe) => unsubscribe());
-        feedSubscriptions.current = feedSubscriptions.current.filter(
-          (item) => !unsubscribeFrom.includes(item)
+        const newSubscriptions = feedSubscriptions.current.filter(
+          (subscription) => {
+            if (unsubscribeFrom.includes(subscription.id)) {
+              subscription.function();
+              return false;
+            }
+            return true;
+          }
         );
+        feedSubscriptions.current = newSubscriptions;
       }
       if (subscribeTo) {
-        subscribeTo.forEach((pet) => {
-          console.log("Current pet: " + pet);
-          feedSubscriptions.current.push(
-            userCollection(user.uid)
+        subscribeTo.forEach((petId) => {
+          console.log("Current pet: " + petId);
+          feedSubscriptions.current.push({
+            id: petId,
+            function: userCollection(user.uid)
               .doc("feedInfo")
-              .collection(pet)
+              .collection(petId)
               .orderBy("time", "desc")
               .onSnapshot((querySnapshot) => {
                 //TODO: instead of re-writing the whole pet array in feedList, we can use onChanges to simply add or delete the instance but right now I cannot be bothered.
                 console.log("onSnapshot update");
 
                 let petFeedList = [];
-                let tempFeedList = [...tempFeedListRef.current];
+                let tempFeedList = [...tempFeedListRef.current]; // Non-linking copy
 
                 querySnapshot.forEach((documentSnapshot) => {
                   petFeedList.push({
@@ -202,39 +228,45 @@ export default function App() {
                   });
                 });
 
-                console.log("tempFeedList before addition of " + pet);
+                console.log("tempFeedList before addition of " + petId);
                 console.log(JSON.stringify(tempFeedList));
                 console.log(petFeedList.length);
 
-                console.log("Acquired " + pet + " list is");
+                console.log("Acquired " + petId + " list is");
                 console.log(petFeedList);
-                console.log(
-                  "And it's " + (petFeedList.length !== 0)
-                    ? "full of data!"
-                    : "dry as a rock."
-                );
-
-                if (petFeedList.length != 0) {
-                  delete tempFeedList[pet];
+                if (petFeedList.length) {
+                  console.log("And it has data.");
                 } else {
-                  const arrayLength = tempFeedList.length;
-
-                  if (arrayLength >= 2) {
-                    let index = Object.keys(tempFeedList).filter(
-                      (key) => tempFeedList[key].name == pet
-                    );
-
-                    if (index.length) tempFeedList[index].feeds = petFeedList;
-                    else tempFeedList.push({ name: pet, feeds: petFeedList });
-                  } else if (arrayLength == 1 && tempFeedList[0].name != pet) {
-                    tempFeedList.push({ name: pet, feeds: petFeedList });
-                  } else tempFeedList = [{ name: pet, feeds: petFeedList }];
+                  console.log("And it's empty.");
                 }
 
-                console.log("tempFeedList after addition of " + pet);
+                //FIXME: Please edit all this and comment it.
+                if (petFeedList.length != 0) {
+                  delete tempFeedList[petId]; // If the new pet feed list has no feeds, we delete all pet feeds residue from the local list
+                } else {
+                  const arrayLength = tempFeedList.length;
+                  if (arrayLength >= 2) {
+                    // More than two pets are in the local list, we must find the key of the pet we want to edit
+                    let index = Object.keys(tempFeedList).filter(
+                      // Returns an index of the local list where pet is stored
+                      (key) => tempFeedList[key].id == petId
+                    );
+
+                    if (index && index.length)
+                      tempFeedList[index].feeds = petFeedList;
+                    // feeds exist so we overwrite the 'feeds' key
+                    else tempFeedList.push({ id: petId, feeds: petFeedList }); // Otherwise we create a new object with keys id and feeds
+                  } else if (arrayLength == 1 && tempFeedList[0].name != pet) {
+                    // There is only one pet in the local list, and it's not the current one
+                    tempFeedList.push({ id: petId, feeds: petFeedList }); // Create a new object with keys id and feeds
+                  } else tempFeedList = [{ id: petId, feeds: petFeedList }]; // Otherwise we create a new list with a new object with keys id and feeds
+                }
+
+                console.log("tempFeedList after addition of " + petId);
                 console.log(JSON.stringify(tempFeedList));
 
                 setFeedList(() => {
+                  // Functional useState using previous value ensures chronological execution
                   tempFeedListRef.current = tempFeedList;
                   return tempFeedList;
                 });
@@ -242,11 +274,24 @@ export default function App() {
                 // Update pet feed count in database
                 userCollection(user.uid)
                   .doc("petInfo")
-                  .update({
-                    [pet + ".feedNum"]: petFeedList.length,
+                  .get()
+                  .then((data) => {
+                    console.log("that data");
+                    console.log(data.data());
+                    // Returns an index of the local list where pet is stored
+                    let index = Object.keys(data.data()).filter(
+                      (key) => data.data()[key].id == petId
+                    );
+                    if (index.length) {
+                      data.data()[index[0]].feedCount = petFeedList.length;
+                      userCollection(user.uid)
+                        .doc("petInfo")
+                        .update(data.data())
+                        .then(() => console.log("update successful."));
+                    }
                   });
-              })
-          );
+              }),
+          });
         });
       }
       prevPetList.current = tempPetList;
@@ -260,11 +305,10 @@ export default function App() {
   }, [petList]);
 
   function onAuthStateChangedLocal(user) {
-    console.log(JSON.stringify(user));
     setUser(user);
     Vibration.vibrate(vibrationPattern);
     const currentTime = moment().unix();
-    if (user) {
+    if (user && !databaseChecked.current) {
       //Check if user exists in the database
       userCollection(user.uid)
         .get()
@@ -275,7 +319,7 @@ export default function App() {
 
             batch.set(col.doc("petInfo"), {});
             batch.set(col.doc("feedInfo"), {});
-            batch.set(col.doc("devices"), {});
+            batch.set(col.doc("deviceInfo"), {});
             batch.set(col.doc("user"), {
               name: user.displayName,
               email: user.email,
@@ -284,9 +328,17 @@ export default function App() {
               firstSeen: currentTime,
               lastSeen: currentTime,
             });
-            batch.commit().then((databaseInitiated = true)); //FIXME: This doesn't mean the data is received. It only means the function has returned. We must here confirm that the data has been recieved if we want to do this how it's done.
+            batch.commit().then(() => {
+              userCollection(user.uid)
+                .get()
+                .then((documentSnapshot) => {
+                  if (documentSnapshot && !documentSnapshot.empty)
+                    // The document has been written,
+                    databaseInitiated.current = true; //We can trigger
+                });
+            });
           } else if (!data.empty) {
-            databaseInitiated = true;
+            databaseInitiated.current = true; // User data already exists in the database
             userCollection(user.uid).doc("user").update({
               lastSeen: currentTime,
             });
@@ -307,45 +359,132 @@ export default function App() {
   }
 
   // Add feed event for petName
-  async function addFeedEvent(foodAmount, petName) {
+  function addFeedEvent(foodAmount, petId) {
+    if (!(foodAmount && petId)) return 1;
+
     console.log("App.js: About to add " + foodAmount + " to " + petName);
-    if (foodAmount && petName) {
-      const currentTime = moment().unix();
-      userCollection(user.uid)
-        .doc("petInfo")
-        .get()
-        .then((data) => {
-          console.log(data);
-          const deviceNumber = data.data()[petName].assignedDevice;
-          userCollection(user.uid)
-            .doc("feedInfo")
-            .collection(petName)
-            .add({
-              amount: parseInt(foodAmount),
-              device: deviceNumber,
-              time: currentTime,
-            })
-            .then(() => {
-              // I can add error handling here as well, as they are bound to pop out of nowhere
-              console.log("App.js: Feed event added.");
-            })
-            .catch((err) => {
-              console.error(err);
-            });
-        });
-    }
+    const currentTime = moment().unix();
+    //We need to fetch the pet information to see which device they are assigned to (there are better local storage ways). Error if the pet doesn't exist, but in the final app we don't add feeds, only read and delete them
+    userCollection(user.uid)
+      .doc("petInfo")
+      .get()
+      .then((data) => {
+        console.log(data);
+        const deviceNumber = data.data()[petId].assignedDevice; // Get the number
+        userCollection(user.uid) // Add feed to pet
+          .doc("feedInfo")
+          .collection(petId)
+          .add({
+            amount: parseInt(foodAmount),
+            device: deviceNumber,
+            time: currentTime,
+          })
+          .then(() => {
+            // I can add error handling here as well, as they are bound to pop out of nowhere
+            console.log("App.js: Feed event added.");
+          })
+          .catch((err) => {
+            console.error(err);
+          });
+      });
   }
 
   //Delete feed item of parsed ID
-  function deleteFeedEvent(name, id) {
-    console.log("App.js: attempting to delete event id: " + id);
+  function deleteFeedEvent(petId, feedId) {
+    if (!(petId && feedId)) return 1;
+
+    console.log(
+      "App.js: attempting to delete pet feed " + petName + "event id " + id
+    );
 
     userCollection(user.uid)
       .doc("feedInfo")
-      .collection(name)
-      .doc(id)
+      .collection(petId)
+      .doc(feedId)
       .delete()
       .then(() => console.log("App.js: deleted"));
+  }
+
+  function addPet(petName, feedAmount, assignedDeviceId) {
+    if (!(petName && assignedDeviceId && feedAmount)) return 1;
+
+    // Updating pets doesn't happen often, so we can do something dirty
+    userCollection(user.uid)
+      .doc("petInfo")
+      .get()
+      .then((data) => {
+        let match = false;
+        do {
+          randomId = Math.random().toString(36).slice(2, 10);
+          match = false;
+
+          for (let key in data.data()) {
+            if (key == randomId) match = true;
+          }
+
+          if (!match) {
+            userCollection(user.uid)
+              .doc("feedInfo")
+              .collection(randomId)
+              .add({});
+            userCollection(user.uid)
+              .doc("petInfo")
+              .update({
+                [randomId]: {
+                  name: petName,
+                  id: randomId,
+                  assignedDevice: assignedDeviceId,
+                  feedAmount: feedAmount,
+                  feedCount: 0,
+                  lastFeed: 0,
+                },
+              })
+              .then(() => console.log("Pet added."));
+          }
+        } while (match);
+      });
+  }
+
+  function removePet(petId) {
+    if (!petId) return 1;
+
+    // Check if the pet under that ID exists
+    userCollection(user.uid)
+      .doc("petInfo")
+      .get()
+      .then((data) => {
+        for (let key in data.data()) {
+          if (key == petId) {
+            userCollection(user.uid)
+              .doc("petInfo")
+              .update({
+                [petId]: firestore.FieldValue.delete(),
+              })
+              .then(() => console.log("pet deleted."));
+          }
+        }
+      });
+  }
+
+  function removeDevice(deviceId) {
+    if (!deviceId) return 1;
+
+    // Check if the pet under that ID exists
+    userCollection(user.uid)
+      .doc("deviceInfo")
+      .get()
+      .then((data) => {
+        for (let key in data.data()) {
+          if (key == petId) {
+            userCollection(user.uid)
+              .doc("deviceInfo")
+              .update({
+                [deviceId]: firestore.FieldValue.delete(),
+              })
+              .then(() => console.log("device deleted."));
+          }
+        }
+      });
   }
 
   // Handle setting a state
@@ -436,143 +575,110 @@ export default function App() {
     );
   }
   return (
-    <StrictMode>
-      <ListContext.Provider
-        value={{
-          feedList: JSON.parse(JSON.stringify(feedList)),
-          deviceList: JSON.parse(JSON.stringify(deviceList)),
-          userDisplayName: user.displayName,
-          userPhotoURL: user.photoURL,
-          addEvent: addFeedEvent,
-          onFlatListPressable: deleteFeedEvent,
-        }}
-      >
-        <MainContainer
-          onLogOutButtonPress={() => {
-            googleSignOut().then(() => console.log("App.js: Signed out!"));
-          }}
-        />
-      </ListContext.Provider>
-    </StrictMode>
     // <StrictMode>
-    //   <ListContext.Provider
+    //   <Context.Provider
     //     value={{
-    //       deviceList: [...deviceList],
-    //       petInfo: [...petInfo],
-    //       feedList: [...feedList],
+    //       feedList: JSON.parse(JSON.stringify(feedList)),
+    //       deviceList: JSON.parse(JSON.stringify(deviceList)),
+    //       petList: JSON.parse(JSON.stringify(petList)),
     //       userDisplayName: user.displayName,
     //       userPhotoURL: user.photoURL,
+    //       addEvent: addFeedEvent,
     //       onFlatListPressable: deleteFeedEvent,
-    //       addRandomFeedEvent: addFeedEvent
     //     }}
     //   >
     //     <MainContainer
-    //       onButtonPress={() => {
+    //       onLogOutButtonPress={() => {
     //         googleSignOut().then(() => console.log("App.js: Signed out!"));
     //       }}
     //     />
-    //   </ListContext.Provider>
+    //   </Context.Provider>
     // </StrictMode>
 
-    // <View>
-    //   <TextInput
-    //     style={styles.textInput}
-    //     placeholder="Feed Rex with this amount."
-    //     onChangeText={setNewFeedInfo}
-    //     value={newFeedInfo}
-    //   />
+    <View>
+      <TextInput
+        style={styles.textInput}
+        placeholder="New pet name"
+        onChangeText={setPetName}
+        value={petName}
+      />
+      <TextInput
+        style={styles.textInput}
+        placeholder="New pet feed amount"
+        onChangeText={setPetFeedAmount}
+        value={petFeedAmount}
+      />
+      <TextInput
+        style={styles.textInput}
+        placeholder="New pet assigned device ID"
+        onChangeText={setPetAssignedDeviceId}
+        value={petAssignedDeviceId}
+      />
 
-    //   <View style={styles.elementMargin}>
-    //     <Button
-    //       title="Feed Gricka"
-    //       onPress={() => {
-    //         //get current feed number
-    //         //we're not testing how much food is left here
-    //         addFeedEvent(newFeedInfo, "Gricka");
-    //       }}
-    //     />
-    //   </View>
+      <View style={{ margin: 10, color: "#49e941" }}>
+        <Button
+          title="Add pet"
+          onPress={() => {
+            //get current feed number
+            //we're not testing how much food is left here
+            addPet(petName, petFeedAmount, petAssignedDeviceId);
+          }}
+        />
+      </View>
 
-    //   <View style={styles.elementMargin}>
-    //     <Button
-    //       title="Feed Rex"
-    //       onPress={() => {
-    //         //get current feed number
-    //         //we're not testing how much food is left here
-    //         addFeedEvent(newFeedInfo, "Rex");
-    //       }}
-    //     />
-    //   </View>
+      <TextInput
+        style={styles.textInput}
+        placeholder="Feed first pet this amount."
+        onChangeText={setNewFeedInfo}
+        value={newFeedInfo}
+      />
 
-    //   <TextInput
-    //     style={styles.textInput}
-    //     placeholder="ID to remove"
-    //     onChangeText={setIDToDelete}
-    //     value={IDToDelete}
-    //   />
+      <View style={styles.elementMargin}>
+        <Button
+          title="Feed first pet"
+          onPress={() => {
+            //get current feed number
+            //we're not testing how much food is left here
+            console.log(petList);
+            addFeedEvent(newFeedInfo, petList[0].id);
+          }}
+        />
+      </View>
 
-    //   <View style={styles.elementMargin}>
-    //     <Button
-    //       title="Remove feedEvent with ID"
-    //       onPress={() => {
-    //         deleteFeedEvent(IDToDelete).then(() => {console.log("App.js: Feed event deleted")})
-    //       }}
-    //     />
-    //   </View>
+      <TextInput
+        style={styles.textInput}
+        placeholder="ID of pet to remove"
+        onChangeText={setPetDeleteId}
+        value={petDeleteId}
+      />
 
-    //   <View style={styles.elementMargin}>
-    //     <Button title="Get user info" onPress={() => console.log(user)} />
-    //   </View>
+      <TextInput
+        style={styles.textInput}
+        placeholder="feed event ID to remove"
+        onChangeText={setEventDeleteId}
+        value={eventDeleteId}
+      />
 
-    //   <View style={styles.elementMargin}>
-    //     <Button
-    //       title="Log Rex feeds"
-    //       onPress={() => {
-    //         userCollection(user.uid)
-    //           .doc("feedInfo")
-    //           .collection("Rex")
-    //           .get()
-    //           .then((data) => {
-    //             console.log(data.docs.map((doc) => doc.data()));
-    //           });
-    //       }}
-    //     />
-    //   </View>
+      <View style={styles.elementMargin}>
+        <Button
+          title="Remove feedEvent with ID"
+          onPress={() => {
+            deleteFeedEvent(petDeleteId, eventDeleteId).then(() => {
+              console.log("App.js: Feed event deleted");
+            });
+          }}
+        />
+      </View>
 
-    //   <View style={styles.elementMargin}>
-    //     <Button
-    //       title="Log Gricka feeds"
-    //       onPress={() => {
-    //         userCollection(user.uid)
-    //           .doc("feedInfo")
-    //           .collection("Gricka")
-    //           .get()
-    //           .then((data) => {
-    //             console.log(data.docs.map((doc) => doc.data()));
-    //           });
-    //       }}
-    //     />
-    //   </View>
-
-    //   <View style={styles.elementMargin}>
-    //     <Button
-    //       title={"Log feedList ids"}
-    //       onPress={() => {
-    //         Object.keys(feedList).map((subdata) => {
-    //           console.log(subdata + ":");
-    //           feedList[subdata].map((data) => console.log(data));
-    //         });
-    //       }}
-    //     />
-    //   </View>
-
-    //   <View style={styles.elementMargin}>
-    //     <Button
-    //       title="Sign out"
-    //       onPress={() => googleSignOut().then(() => console.log("App.js: Signed out!"))}
-    //     />
-    //   </View>
-    // </View>
+      <View style={styles.elementMargin}>
+        <Button
+          title="Sign out"
+          onPress={() =>
+            googleSignOut().then(() => console.log("App.js: Signed out!"))
+          }
+        />
+      </View>
+    </View>
   );
 }
 
