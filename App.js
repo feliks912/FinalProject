@@ -93,6 +93,19 @@ export default function App() {
   // TODO: Firestore error handling
   // User authentication state listener
 
+  function reinitializeAllRegisters() {
+    console.log("Removing everything lol fuck you.");
+    setPetList([]);
+    setFeedList([]);
+    setDeviceList([]);
+    setDatabaseInitiated(false);
+    coreSubscriptions.current = [];
+    feedSubscriptions.current = [];
+    prevPetList.current = [];
+    tempFeedListRef.current = [];
+    databaseChecked.current = false;
+  }
+
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(onAuthStateChangedLocal);
     return subscriber; // unsubscribe on unmount
@@ -123,7 +136,7 @@ export default function App() {
           .doc("deviceInfo")
           .onSnapshot((documentSnapshot) => {
             console.log("deviceInfo updated");
-            if (documentSnapshot.exists) {
+            if (documentSnapshot && documentSnapshot.exists) {
               let tempInfo = [];
               for (let key in documentSnapshot.data()) {
                 // List through keys of random values
@@ -144,7 +157,7 @@ export default function App() {
           .doc("petInfo")
           .onSnapshot((documentSnapshot) => {
             console.log("petInfo updated");
-            if (documentSnapshot.exists) {
+            if (documentSnapshot && documentSnapshot.exists) {
               let tempInfo = [];
               for (let key in documentSnapshot.data()) {
                 let { name, id, ...rest } = documentSnapshot.data()[key];
@@ -220,120 +233,135 @@ export default function App() {
             .onSnapshot((querySnapshot) => {
               //TODO: instead of re-writing the whole pet array in feedList, we can use onChanges to simply add or delete the instance but right now I cannot be bothered.
               console.log("onSnapshot update");
+              if (querySnapshot) {
+                let petFeedList = [];
+                let tempFeedList = [...tempFeedListRef.current]; // Non-linking copy
 
-              let petFeedList = [];
-              let tempFeedList = [...tempFeedListRef.current]; // Non-linking copy
-
-              querySnapshot.forEach((documentSnapshot) => {
-                petFeedList.push({
-                  ...documentSnapshot.data(),
-                  id: documentSnapshot.id,
+                querySnapshot.forEach((documentSnapshot) => {
+                  petFeedList.push({
+                    ...documentSnapshot.data(),
+                    id: documentSnapshot.id,
+                  });
                 });
-              });
 
-              console.log("tempFeedList before addition of " + petId);
-              console.log(JSON.stringify(tempFeedList));
-              console.log(petFeedList.length);
+                console.log("tempFeedList before addition of " + petId);
+                console.log(JSON.stringify(tempFeedList));
+                console.log(petFeedList.length);
 
-              console.log("Acquired " + petId + " list is");
-              console.log(petFeedList);
-              if (petFeedList.length) {
-                console.log("And it has data.");
-              } else {
-                console.log("And it's empty.");
-              }
-
-              //TODO: Please find an alternative
-              if (petFeedList.length == 0) {
-                console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-                console.log("petFeedList is empty");
+                console.log("Acquired " + petId + " list is");
                 console.log(petFeedList);
-                console.log(tempFeedList);
-                // let index = Object.keys(tempFeedList).filter(
-                //   // Returns an index of the local list where pet is stored
-                //   (key) => tempFeedList[key].id == petId
-                // );
-                tempFeedList = tempFeedList.filter((obj) => obj.id !== petId); // If the new pet feed list has no feeds, we delete all pet feeds residue from the local list
-                console.log(tempFeedList);
-              } else {
-                const arrayLength = tempFeedList.length;
-                console.log(
-                  "currently tempFeedList has " +
-                    arrayLength.toString() +
-                    " members."
-                );
-                if (arrayLength >= 2) {
-                  // More than two pets are in the local list, we must find the key of the pet we want to edit
-                  let index = Object.keys(tempFeedList).filter(
-                    // Returns an index of the local list where pet is stored
-                    (key) => tempFeedList[key].id == petId
+                if (petFeedList.length) {
+                  console.log("And it has data.");
+                } else {
+                  console.log("And it's empty.");
+                }
+
+                //TODO: Please find an alternative
+                if (petFeedList.length == 0) {
+                  console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+                  console.log("petFeedList is empty");
+                  console.log(petFeedList);
+                  console.log(tempFeedList);
+                  // let index = Object.keys(tempFeedList).filter(
+                  //   // Returns an index of the local list where pet is stored
+                  //   (key) => tempFeedList[key].id == petId
+                  // );
+                  tempFeedList = tempFeedList.filter((obj) => obj.id !== petId); // If the new pet feed list has no feeds, we delete all pet feeds residue from the local list
+                  console.log(tempFeedList);
+                } else {
+                  const arrayLength = tempFeedList.length;
+                  console.log(
+                    "currently tempFeedList has " +
+                      arrayLength.toString() +
+                      " members."
                   );
+                  if (arrayLength >= 2) {
+                    // More than two pets are in the local list, we must find the key of the pet we want to edit
+                    let index = Object.keys(tempFeedList).filter(
+                      // Returns an index of the local list where pet is stored
+                      (key) => tempFeedList[key].id == petId
+                    );
 
-                  //FIXME: Was using index here but index is an array with one value so index[0] must be used.
-                  if (index[0] && index.length)
-                    tempFeedList[index[0]].feeds = petFeedList;
-                  // feeds exist so we overwrite the 'feeds' key
-                  else tempFeedList.push({ id: petId, feeds: petFeedList }); // Otherwise we create a new object with keys id and feeds
-                } else if (arrayLength == 1 && tempFeedList[0].id != petId) {
-                  // There is only one pet in the local list, and it's not the current one
-                  tempFeedList.push({ id: petId, feeds: petFeedList }); // Create a new object with keys id and feeds
-                } else tempFeedList = [{ id: petId, feeds: petFeedList }]; // Otherwise we create a new list with a new object with keys id and feeds
-              }
+                    //FIXME: Was using index here but index is an array with one value so index[0] must be used.
+                    if (index[0] && index.length)
+                      tempFeedList[index[0]].feeds = petFeedList;
+                    // feeds exist so we overwrite the 'feeds' key
+                    else tempFeedList.push({ id: petId, feeds: petFeedList }); // Otherwise we create a new object with keys id and feeds
+                  } else if (arrayLength == 1 && tempFeedList[0].id != petId) {
+                    // There is only one pet in the local list, and it's not the current one
+                    tempFeedList.push({ id: petId, feeds: petFeedList }); // Create a new object with keys id and feeds
+                  } else tempFeedList = [{ id: petId, feeds: petFeedList }]; // Otherwise we create a new list with a new object with keys id and feeds
+                }
 
-              console.log("tempFeedList after addition of " + petId);
-              console.log(tempFeedList);
-              console.log(JSON.stringify(tempFeedList));
-              for (let pet in tempFeedList) {
-                console.log(tempFeedList[pet]);
-              }
+                console.log("tempFeedList after addition of " + petId);
+                console.log(tempFeedList);
+                console.log(JSON.stringify(tempFeedList));
+                for (let pet in tempFeedList) {
+                  console.log(tempFeedList[pet]);
+                }
 
-              setFeedList(() => {
-                // Functional useState using previous value ensures chronological execution
-                tempFeedListRef.current = tempFeedList;
-                return tempFeedList;
-              });
-
-              // Update pet last feed time
-              userCollection(user.uid)
-                .doc("petInfo")
-                .get()
-                .then((data) => {
-                  console.log("that data");
-                  console.log(data.data());
-                  // Returns an index of the local list where pet is stored
-                  let index = Object.keys(data.data()).filter(
-                    (key) => data.data()[key].id == petId
-                  );
-                  if (index.length) {
-                    // Conditionally refresh last feed time
-                    const lastListFeed = Math.max(
-                      ...petFeedList.map((o) => o.time),
-                      0
-                    ); // "Find the object whose property "Y" has the greatest value in an array of objects, default to 0" thank you Stackexchange.
-                    if (lastListFeed > data.data()[index[0]].lastFeed) {
-                      data.data()[index[0]].lastFeed = lastListFeed;
-                      userCollection(user.uid)
-                        .doc("petInfo")
-                        .update(data.data())
-                        .then(() => console.log("update successful."));
-                    }
-                  }
+                setFeedList(() => {
+                  // Functional useState using previous value ensures chronological execution
+                  tempFeedListRef.current = tempFeedList;
+                  return tempFeedList;
                 });
+
+                // Update pet last feed time
+                userCollection(user.uid)
+                  .doc("petInfo")
+                  .get()
+                  .then((data) => {
+                    console.log("that data");
+                    console.log(data.data());
+                    // Returns an index of the local list where pet is stored
+                    let index = Object.keys(data.data()).filter(
+                      (key) => data.data()[key].id == petId
+                    );
+                    if (index.length) {
+                      // Conditionally refresh last feed time
+                      const lastListFeed = Math.max(
+                        ...petFeedList.map((o) => o.time),
+                        0
+                      ); // "Find the object whose property "Y" has the greatest value in an array of objects, default to 0" thank you Stackexchange.
+                      if (lastListFeed > data.data()[index[0]].lastFeed) {
+                        console.log(data.data()[index[0]].lastFeed);
+                        data.data()[index[0]].lastFeed = lastListFeed;
+                        console.log(data.data()[index[0]].lastFeed);
+                        userCollection(user.uid)
+                          .doc("petInfo")
+                          .update(data.data())
+                          .then(() => console.log("update successful."));
+                      }
+                    }
+                  });
+              }
             }),
         });
       });
     }
     prevPetList.current = tempPetList;
     //FIXME: Return unsubscribe functions in the correct manner, the following executes them immediately.
-    // return () => {
-    //   if (Array.isArray(feedSubscriptions.current)) { // Check if array duh
-    //     feedSubscriptions.current.forEach((unsubscribe) => unsubscribe())
-    //   }
-    // }
+    return () => {
+      if (Array.isArray(feedSubscriptions.current)) {
+        // Check if array duh
+        feedSubscriptions.current.forEach(
+          (subscription) => subscription.function
+        );
+      }
+    };
   }, [petList]);
 
   function onAuthStateChangedLocal(user) {
+    console.log("user state changed");
     setUser(user);
+
+    if (initializing) setInitializing(false);
+
+    if (!user) {
+      reinitializeAllRegisters();
+      ToastAndroid.show("You've been signed out", ToastAndroid.SHORT);
+      return;
+    }
 
     Vibration.vibrate(vibrationPattern);
     const currentTime = moment().unix();
@@ -384,10 +412,7 @@ export default function App() {
         "Successfuly signed in with Google.",
         ToastAndroid.SHORT
       );
-    } else {
-      ToastAndroid.show("You've been signed out", ToastAndroid.SHORT);
     }
-    if (initializing) setInitializing(false);
   }
 
   // Add feed event for petName
@@ -411,28 +436,17 @@ export default function App() {
             device: deviceNumber,
             time: currentTime,
           })
-          .then(() => {
-            userCollection(user.uid)
-              .doc("petInfo")
-              .get()
-              .then((data) => {
-                let index = Object.keys(data.data()).filter(
-                  (key) => data.data()[key].id == petId
-                );
-                if (index.length) {
-                  data.data()[index[0]].feedCount++;
-                  userCollection(user.uid)
-                    .doc("petInfo")
-                    .update(data.data())
-                    .then(() => console.log("update successful."));
-                }
-              });
-            // I can add error handling here as well, as they are bound to pop out of nowhere
-            console.log("App.js: Feed event added.");
-          })
-          .catch((err) => {
-            console.error(err);
-          });
+          .then(() => console.log("feed added to cloud"));
+        let index = Object.keys(data.data()).filter(
+          (key) => data.data()[key].id == petId
+        );
+        if (index.length) {
+          data.data()[index[0]].feedCount++;
+          userCollection(user.uid)
+            .doc("petInfo")
+            .update(data.data())
+            .then(() => console.log("petInfo feedCount updated"));
+        }
       });
   }
 
@@ -628,28 +642,24 @@ export default function App() {
     );
   }
   return (
-    <StrictMode>
-      <Context.Provider
-        value={{
-          feedList: JSON.parse(JSON.stringify(feedList)),
-          deviceList: JSON.parse(JSON.stringify(deviceList)),
-          petList: JSON.parse(JSON.stringify(petList)),
-          userDisplayName: user.displayName,
-          userPhotoURL: user.photoURL,
-          addEvent: addFeedEvent,
-          onFlatListPressable: deleteFeedEvent,
-          addFeedEvent: addFeedEvent,
-          addPet: addPet,
-          deleteFeedEvent: deleteFeedEvent,
-        }}
-      >
-        <MainContainer
-          onLogOutButtonPress={() => {
-            googleSignOut().then(() => console.log("App.js: Signed out!"));
-          }}
-        />
-      </Context.Provider>
-    </StrictMode>
+    //<StrictMode>
+    <Context.Provider
+      value={{
+        feedList: JSON.parse(JSON.stringify(feedList)),
+        deviceList: JSON.parse(JSON.stringify(deviceList)),
+        petList: JSON.parse(JSON.stringify(petList)),
+        userDisplayName: user.displayName,
+        userPhotoURL: user.photoURL,
+        addEvent: addFeedEvent,
+        onFlatListPressable: deleteFeedEvent,
+        addFeedEvent: addFeedEvent,
+        addPet: addPet,
+        deleteFeedEvent: deleteFeedEvent,
+      }}
+    >
+      <MainContainer onLogOutButtonPress={googleSignOut} />
+    </Context.Provider>
+    //</StrictMode>
   );
 }
 

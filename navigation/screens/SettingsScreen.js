@@ -2,43 +2,26 @@ import { View, Text, Image, StyleSheet, FlatList } from "react-native";
 import { useContext, useState, useEffect } from "react";
 import DeviceItem from "../../components/DeviceItem";
 import Context from "../../components/Context";
-import moment from "moment";
 
 export default function SettingsScreen() {
   const context = useContext(Context);
   const [displayList, setDisplayList] = useState([]);
 
-  useEffect(() => { // Restructure the list on device mount and device change
-    if (context.deviceList.length) {
-      const newList = [];
-      console.log("deviceList before sort")
-      console.log(context.deviceList)
-      for (let device in context.deviceList) {
-        newList.push({name:context.deviceList[device].name, ...context.deviceList[device].info})
-      }
-      newList.sort((a, b) => b.time - a.time);
-      console.log("new deviceList after sort")
-      console.log(newList)
-      setDisplayList(newList);
-    }
-  }, [context.deviceList]);
-
   return(
     <View>
       <FlatList
-        data={displayList}
-        renderItem={(item) => {
+        data={context.deviceList}
+        renderItem={(data) => {
           return (
             <DeviceItem
-              name={item.item.name}
-              assignedPet={item.item.assignedPet}
-              foodLeft={item.item.foodLeft}
-              deviceId={item.item.deviceId}
+              name={data.item.name}
+              info={data.item.info}
+              id={data.item.id}
             />
           );
         }}
         keyExtractor={(item, index) => {
-          return item.deviceId;
+          return item.id;
         }}
       />
     </View>

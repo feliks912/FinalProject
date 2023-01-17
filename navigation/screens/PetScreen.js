@@ -1,21 +1,26 @@
-import { View, Text, Button, TextInput, StyleSheet } from "react-native";
-import DropDownPicker from "react-native-dropdown-picker";
+import {
+  View,
+  Text,
+  Button,
+  TextInput,
+  StyleSheet,
+  FlatList,
+} from "react-native";
 import { useState, useContext } from "react";
-import Context from '../../components/Context'
+import Context from "../../components/Context";
+import PetItem from "../../components/PetItem";
 
 export default function PetScreen(navigation) {
   const [newFeedInfo, setNewFeedInfo] = useState("");
-  const [petDeleteId, setPetDeleteId] = useState("");
-  const [eventDeleteId, setEventDeleteId] = useState("");
-  
-  const [petName, setPetName] = useState("")
+
+  const [petName, setPetName] = useState("");
   const [petFeedAmount, setPetFeedAmount] = useState("");
   const [petAssignedDeviceId, setPetAssignedDeviceId] = useState("");
 
-  const context = useContext(Context)
+  const context = useContext(Context);
 
   return (
-    <View>
+    <View style={styles.container}>
       <TextInput
         style={styles.textInput}
         placeholder="New pet name"
@@ -35,10 +40,14 @@ export default function PetScreen(navigation) {
         value={petAssignedDeviceId}
       />
 
-      <View style={{ margin: 10, color: "#49e941" }}>
+      <View style={styles.elementMargin}>
         <Button
           title="Add pet"
+          color="#49e941"
           onPress={() => {
+            setPetName("")
+            setPetFeedAmount("")
+            setPetAssignedDeviceId("")
             //get current feed number
             //we're not testing how much food is left here
             context.addPet(petName, petFeedAmount, petAssignedDeviceId);
@@ -64,49 +73,24 @@ export default function PetScreen(navigation) {
         />
       </View>
 
-      <TextInput
-        style={styles.textInput}
-        placeholder="ID of pet to remove"
-        onChangeText={setPetDeleteId}
-        value={petDeleteId}
+      <FlatList
+        data={context.petList}
+        renderItem={(data) => {
+          return (
+            <PetItem
+              petId={data.item.id}
+              name={data.item.name}
+              info={data.item.info}
+              onDeleteItem={context.onDeleteMyPet}
+            />
+          );
+        }}
+        keyExtractor={(item, index) => {
+          //TODO: Assuming firebase doesn't create 2 documents of equal ID for different pets. We can combine pet and document id's to create an unique ID sometime in the future
+          return item.id;
+        }}
       />
-
-      <TextInput
-        style={styles.textInput}
-        placeholder="feed event ID to remove"
-        onChangeText={setEventDeleteId}
-        value={eventDeleteId}
-      />
-
-      <View style={styles.elementMargin}>
-        <Button
-          title="Remove feedEvent with ID"
-          onPress={() => {
-            context.deleteFeedEvent(petDeleteId, eventDeleteId).then(() => {
-              console.log("App.js: Feed event deleted");
-            });
-          }}
-        />
-      </View>
     </View>
-
-    // const [open, setOpen] = useState(false);
-    // const [value, setValue] = useState(null);
-    // const [items, setItems] = useState([
-    //   {label: 'Apple', value: 'apple'},
-    //   {label: 'Banana', value: 'banana'}
-    // ]);
-
-    // return (
-    //   <DropDownPicker
-    //     open={open}
-    //     value={value}
-    //     items={items}
-    //     setOpen={setOpen}
-    //     setValue={setValue}
-    //     setItems={setItems}
-    //   />
-    // );
   );
 }
 

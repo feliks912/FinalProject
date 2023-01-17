@@ -31,16 +31,16 @@ export default function FeedScreen() {
   }, [context.feedList]);
 
   return (
-    <View style={Styles.container}>
-      <Image source={{ uri: context.userPhotoURL }} style={Styles.image} />
+    <View style={styles.container}>
+      <Image source={{ uri: context.userPhotoURL }} style={styles.image} />
 
-      <Text style={Styles.elementMargin}>
+      <Text style={styles.elementMargin}>
         <Text>Welcome, </Text>
         <Text style={{ fontWeight: "bold" }}>{context.userDisplayName}</Text>
         <Text>.</Text>
       </Text>
 
-      <View style={Styles.elementMargin}>
+      <View style={styles.elementMargin}>
         <Button
           title="Generate random feed"
           onPress={() =>
@@ -74,7 +74,7 @@ export default function FeedScreen() {
         }}
       />
 
-      {/* <View style={Styles.feedListContainer}>
+      {/* <View style={styles.feedListContainer}>
         <VirtualizedList
           data={context.feedList}
           getItem={getItem}
@@ -93,7 +93,7 @@ export default function FeedScreen() {
   );
 }
 
-const Styles = StyleSheet.create({
+const styles = StyleSheet.create({
   elementMargin: {
     margin: 10,
   },
