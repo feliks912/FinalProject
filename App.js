@@ -25,6 +25,7 @@ import {
   GoogleSigninButton,
 } from "@react-native-google-signin/google-signin";
 import auth from "@react-native-firebase/auth";
+import initiateGoogleKeys from "./AuthKeys";
 
 import MainContainer from "./navigation/MainContainer";
 
@@ -32,10 +33,7 @@ import Context from "./components/Context";
 
 import { useCardAnimation } from "@react-navigation/stack";
 
-GoogleSignin.configure({
-  webClientId:
-    "783455449055-3aq47aap1qhf0q77pm8gf826svlsqad5.apps.googleusercontent.com",
-});
+initiateGoogleKeys();
 
 async function onGoogleButtonPress() {
   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
@@ -57,7 +55,7 @@ async function onGoogleButtonPress() {
 async function googleSignOut() {
   ToastAndroid.show("Signing out...", ToastAndroid.SHORT);
   try {
-    //revokeAccess removes automatic account selection on next login, enabling us to log in using other accounts
+    //revokeAccess removes automatic account selection on next login, enabling us to log in using other accounts. It also seems to trigger an [Error: SIGN_IN_REQUIRED]
     await GoogleSignin.revokeAccess();
     await auth().signOut();
   } catch (error) {
@@ -484,7 +482,7 @@ export default function App() {
           }
 
           if (!match) {
-            userCollection(user.uid) // Listeners aren't created if there is no documents in a collection, so a dummy document must be made
+            userCollection(user.uid) // Listeners don't get created if there is no documents in a collection, so a dummy document must be made. Empty documents are ignored by snapshots.
               .doc("feedInfo")
               .collection(randomId)
               .doc("_init_")

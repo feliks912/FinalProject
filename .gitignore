@@ -1,4 +1,6 @@
 node_modules/
+google-services.json
+AuthKeys.js
 .expo/
 dist/
 npm-debug.*
