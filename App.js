@@ -18,7 +18,6 @@ import "expo-dev-client";
 import firestore, { firebase } from "@react-native-firebase/firestore";
 
 import imageCatEats from "./assets/Cute-cat.jpg";
-import imageCatBack from "./assets/Cat-back.jpg";
 
 import {
   GoogleSignin,
@@ -607,17 +606,7 @@ export default function App() {
     // newList.sort((a, b) => a.time - b.time || a.name - b.name);
   }, [feedList]);
 
-  if (initializing) {
-    return (
-      <View style={styles.container}>
-        <ImageBackground
-          source={imageCatBack}
-          resizeMode="stretch"
-          style={styles.image}
-        ></ImageBackground>
-      </View>
-    );
-  }
+  if (initializing) return
 
   if (!user) {
     return (

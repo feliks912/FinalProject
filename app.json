@@ -11,7 +11,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/Cat-back.jpg",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
