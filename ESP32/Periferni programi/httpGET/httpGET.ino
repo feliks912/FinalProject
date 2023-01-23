@@ -23,7 +23,8 @@ unsigned long lastTime = 0;
 unsigned long timerDelay = 5000;
 unsigned long intermediaryTimerDelay = 3000;
 
-const char* clientId = "783455449055-fucqpv9hknij27am582og52sc1f50bit.apps.googleusercontent.com";
+String client_id = CLIENT_ID;
+String client_secret = CLIENT_SECRET;
 
 //Google certificate
 const static char* googleCert PROGMEM = R"raw(-----BEGIN CERTIFICATE-----
@@ -134,7 +135,7 @@ void loop() {
         Hclient.println("Host: " + mainHost);
         Hclient.println("Content-Type: application/x-www-form-urlencoded;");
         Hclient.println();
-        Hclient.println("client_id=783455449055-fucqpv9hknij27am582og52sc1f50bit.apps.googleusercontent.com&scope=email%20profile");
+        Hclient.println("client_id=CLIENT_ID&scope=email%20profile");
         Serial.println("Data were sent successfully");
           while (Hclient.connected()) {
             String line = Hclient.readStringUntil('\n'); //HTTP headers

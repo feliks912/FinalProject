@@ -7,8 +7,8 @@
 const char* ssid = "Desktop";
 const char* password = "07123010";
 
-String client_id = "783455449055-fucqpv9hknij27am582og52sc1f50bit.apps.googleusercontent.com";
-String client_secret = "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";
+String client_id = CLIENT_ID;
+String client_secret = CLIENT_SECRET;
 
 const static char* stripeCert PROGMEM = R"raw(-----BEGIN CERTIFICATE-----
 MIIDQTCCAimgAwIBAgITBmyfz5m/jAo54vB4ikPmljZbyjANBgkqhkiG9w0BAQsF

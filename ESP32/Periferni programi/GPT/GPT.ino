@@ -6,8 +6,8 @@
 const char* ssid = "Desktop";
 const char* password = "07123010";
 
-String client_id = "783455449055-fucqpv9hknij27am582og52sc1f50bit.apps.googleusercontent.com";
-String client_secret = "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";
+String client_id = CLIENT_ID;
+String client_secret = CLIENT_SECRET;
 
 const static char* googleCert PROGMEM = R"raw(-----BEGIN CERTIFICATE-----
 MIIFVzCCAz+gAwIBAgINAgPlrsWNBCUaqxElqjANBgkqhkiG9w0BAQwFADBHMQsw
@@ -179,7 +179,7 @@ void sendPOST(){
   http.begin("https://oauth2.googleapis.com/token", googleCert);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
   
-  String payload = "client_id=783455449055-fucqpv9hknij27am582og52sc1f50bit.apps.googleusercontent.com&client_secret=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&device_code=AH-1Ng28553MvIFOmhAx6hzbbwknzbA9VigWqsNCLh04_DluKTSN5P8viPfKu6jIChN17eBoJh5UwvQcYnNFvyZetXEBHFSxoQ&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code";
+  String payload = "client_id=CLIENT_ID&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code";
 
 //  Serial.print("Token endpoint: ");
 //  Serial.println(tokenEndpoint);
