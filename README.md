@@ -185,3 +185,5 @@ The source codes for ESP are stored in ESP32/"Glavni Program" and include .ino f
 9) Select 512000 under upload speed and enable PSRAM
 10) Connect ESP32 with USB
 11) Build and upload the sketch
+
+***Yes my keys are exposed in the change log since I didn't know how to. They are revoked.***
